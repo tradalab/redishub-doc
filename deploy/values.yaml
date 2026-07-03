@@ -14,10 +14,10 @@ replicas: 1
 container:
   command: [] # use the image's default CMD (node server.js)
   args: []
-  port: 3000
+  port: 6100
 service:
   enabled: true
-  port: 3000
+  port: 6100
 resources: null
 config:
   enabled: false
