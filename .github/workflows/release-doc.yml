@@ -1,0 +1,61 @@
+name: Build & Push Doc Image
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    permissions:
+      contents: write     # push the image-tag bump to deploy/values.yaml
+      packages: write
+
+    steps:
+      # Check out main (not the detached tag) so we can commit the deploy bump.
+      # At release time the tag sits on main's HEAD, so this is the tagged code.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set version vars
+        id: vars
+        run: |
+          SHORT_SHA=${GITHUB_SHA::7}
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.version }}
+            ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.short_sha }}
+            ghcr.io/${{ github.repository }}:latest
+
+      # New GitOps format: bump the image tag in THIS repo's deploy/values.yaml.
+      # ArgoCD's multi-source Application reads it via $values/deploy/values.yaml,
+      # so no gitops clone/push is needed. [skip ci] avoids re-triggering.
+      - name: Bump image tag in deploy/values.yaml
+        run: |
+          sed -i -E "s|^(\s*tag:\s*).*|\1${{ steps.vars.outputs.short_sha }} # CI overwrites this line|" deploy/values.yaml
+
+          git config user.email "gitops-bot@tradalab.com"
+          git config user.name "gitops-bot"
+
+          git commit -am "ci(doc): bump image tag to ${{ steps.vars.outputs.short_sha }} [skip ci]"
+          git push origin main

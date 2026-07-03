@@ -5,7 +5,7 @@ import {useEffect, useState} from "react"
 import {usePathname} from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import {GithubIcon, MoonIcon, SunIcon} from "lucide-react"
+import {GithubIcon, MenuIcon, MoonIcon, SunIcon, XIcon} from "lucide-react"
 import {DiscordIcon} from "nextra/icons"
 
 export default function Layout({children}: Readonly<{ children: React.ReactNode }>) {
@@ -20,9 +20,11 @@ export default function Layout({children}: Readonly<{ children: React.ReactNode 
 function Header() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => setMounted(true), [])
+  useEffect(() => setMenuOpen(false), [pathname])
   if (!mounted) return null
 
   const navItems = [
@@ -81,8 +83,38 @@ function Header() {
           >
             {theme === "dark" ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
           </button>
+          <button
+            onClick={() => setMenuOpen(open => !open)}
+            className="md:hidden p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            aria-label="Toggle menu"
+            aria-expanded={menuOpen ? "true" : "false"}
+          >
+            {menuOpen ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
+          </button>
         </div>
       </div>
+
+      {menuOpen && (
+        <nav className="md:hidden border-t border-neutral-200 dark:border-neutral-800 px-6 py-3 flex flex-col gap-1 text-sm font-medium">
+          {navItems.map(item => {
+            const isActive = pathname === item.href
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+                className={`
+                  px-2 py-2 rounded-md transition-colors
+                  ${isActive ? "text-indigo-500" : "text-neutral-600 dark:text-neutral-400"}
+                  hover:text-indigo-500
+                `}
+              >
+                {item.label}
+              </Link>
+            )
+          })}
+        </nav>
+      )}
     </header>
   )
 }
