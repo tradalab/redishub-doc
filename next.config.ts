@@ -5,6 +5,10 @@ const withNextra = nextra({
 })
 
 export default withNextra({
+  i18n: {
+    locales: ["en", "ja"],
+    defaultLocale: "en",
+  },
   output: "standalone",
   productionBrowserSourceMaps: false,
   pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],

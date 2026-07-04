@@ -1,0 +1,6 @@
+export default {
+  connections: "Connections",
+  interface: "Interface & Tabs",
+  "key-operations": "Key Operations",
+  "web-mode": "Web Mode Deployment"
+}

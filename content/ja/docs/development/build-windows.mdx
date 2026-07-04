@@ -1,0 +1,34 @@
+# Windows 向けのビルド
+
+Windows 用の成果物（`.msi`）は `scorix` CLI を使ってネイティブにビルドされます。Docker は不要です。MSI
+のステップには WiX Toolset が必要です。
+
+## 前提条件
+
+- **Go 1.26+** と **Node.js 22+** + **pnpm**
+- **WiX Toolset v6** — `dotnet tool install --global wix --version 6.0.2`
+- **scorix CLI** — `go install github.com/tradalab/scorix/cmd/scorix@latest`
+
+## ビルドの手順
+
+プロジェクトのルートから実行します。
+
+```bash
+make package          # scorix package — builds the binary + wraps it into an MSI
+```
+
+または、OS/アーキテクチャを明示的に指定するために `scorix` を直接呼び出します（CI ではこれを実行しています）。
+
+```bash
+scorix package -d . --os windows --arch amd64
+```
+
+`scorix.yaml` の署名用シークレット（`sign.windows`）が環境に存在する場合、コード署名が自動的に適用されます。存在しない場合は、署名されていない MSI が生成されます。
+
+## 出力先
+
+- `artifacts/RedisHub-1.11.0-windows-amd64.msi`（バージョンは `scorix.yaml` の `app.version` に追従します）
+
+> [!NOTE]
+> CI は、ネイティブの `windows-2022` ランナー上で同じ `scorix package` ステップを実行します。詳しくは
+> `.github/workflows/release-windows.yml` を参照してください。

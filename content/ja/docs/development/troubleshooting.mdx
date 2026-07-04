@@ -1,0 +1,47 @@
+# トラブルシューティング
+
+RedisHub の開発・セットアップ・ビルドでよくある問題とその解決方法を紹介します。
+
+---
+
+## ビルド時に `//go:embed all:.scorix/dist` が失敗する
+**症状**: 素の `go build` / `go run` が、`.scorix/dist/` 内のファイルが見つからないというエラーで失敗します。
+
+**解決方法**: `scorix` CLI を通じてビルドしてください。`make dev`（または `make build`）は、Go のビルドの前に Next.js フロントエンドを
+`.scorix/dist` にコンパイルします。`make test` / `make lint` の場合は、Makefile が自動的に一度だけ shell を
+ビルドするため（`_ensure-embed` ターゲットを参照）、手動で行う必要はありません。
+
+---
+
+## アプリケーションウィンドウが開かない
+**症状**: `make dev` はエラーなく完了するのに、アプリケーションウィンドウが表示されません。
+
+**解決方法**:
+1.  ターミナルのログを確認し、隠れたエラーがないか調べます。
+2.  **Windows**: [WebView2 Evergreen Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) がインストールされていることを確認します（Windows 11 / 最近の Windows 10 にはプリインストール済み）。
+3.  **Linux**: GTK/WebKit ランタイムをインストールします — `sudo apt-get install -y libgtk-3-0 libwebkit2gtk-4.1-0`。
+4.  `make doctor`（`scorix doctor`）を実行して、ツールチェーンとランタイム依存関係を検証します。
+5.  `scorix.yaml` でデバッグモードを有効にして、DevTools を自動的に開きます:
+    ```yaml
+    window:
+      debug: true
+    ```
+
+---
+
+## Redis クラスターに接続できない
+**症状**: スタンドアロンの Redis には接続できるのに、ローカルの Docker クラスターには接続できません。
+
+**解決方法**:
+1.  `make redis-up` を実行済みであることを確認します。
+2.  `make redis-init-cluster` を実行します。Redis クラスターは、接続を受け付ける前に、シャーディングスロットの一度きりの初期化が必要です。
+
+---
+
+## ポートの競合
+**症状**: `make dev` または `make redis-up` が「address already in use」で失敗します。
+
+**解決方法**:
+1.  競合しているポートを特定します（例: web サーバーの `8080` や Redis の `6379`）。
+2.  `dev/docker-compose-*.yaml` または `scorix.yaml`（`web.port`）でポートマッピングを編集します。
+3.  RedisHub の UI で接続設定を新しいポートに合わせて更新します。

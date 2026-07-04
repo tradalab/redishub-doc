@@ -1,0 +1,90 @@
+# はじめに
+
+このガイドでは、開発環境の初期セットアップと、RedisHub の中核となるプロジェクト構造について説明します。
+
+## 前提条件
+
+以下のツールがインストールされ、`PATH` から利用できることを確認してください。
+
+| ツール | バージョン | 備考 |
+|------|---------|-------|
+| **Go** | 1.26+ | バックエンドの中核ロジック。 |
+| **Node.js** | 22+ | フロントエンドのランタイム。 |
+| **pnpm** | 10.3+ | 高速なパッケージマネージャー（corepack enable pnpm）。 |
+| **Docker** | recent | ローカルの Redis インスタンスに必要です。 |
+| **scorix CLI** | latest | `go install github.com/tradalab/scorix/cmd/scorix@latest` — `make dev/generate/build/package` を駆動します。 |
+
+### ランタイム依存関係
+
+これらは起動時にアプリによって読み込まれます。ビルド時の依存関係では**ありません**。
+
+- **Windows** — [WebView2 Evergreen Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)（Windows 11 / 最近の Windows 10 にはプリインストール済み）。
+- **Linux** — GTK3 + WebKitGTK: `sudo apt-get install -y libgtk-3-0 libwebkit2gtk-4.1-0`（`4.0` にフォールバックします）。
+- **macOS** — 不要。WKWebView は OS に同梱されています。
+
+> [!TIP]
+> `make doctor`（`scorix doctor`）を実行して、ツールチェーンとランタイム依存関係を検証してください。
+
+---
+
+## ワークスペースの初期化
+
+1.  **リポジトリをクローンします**:
+    ```bash
+    git clone https://github.com/tradalab/redishub.git
+    cd redishub
+    ```
+2.  **依存関係をインストールします**:
+    ```bash
+    make deps
+    ```
+
+---
+
+## ローカルの Redis インスタンス
+
+RedisHub には、さまざまなトポロジーをテストするための設定済み Docker Compose 環境が用意されています。
+
+```bash
+make redis-up
+```
+
+| サービス | ポート | 説明 |
+|---------|------|-------------|
+| **Standalone** | `6001` | 基本的な単一インスタンス。 |
+| **Sentinel** | `9001` | 高可用性ディスカバリーノード。 |
+| **Cluster** | `7001-7003` | シャーディングされた Redis ノード。 |
+
+> [!NOTE]
+> クラスター構成では、コンテナ起動後に一度だけ `make redis-init-cluster` を実行して、シャーディングを初期化してください。
+
+---
+
+## 開発サーバーの実行
+
+Go バックエンドと Next.js 開発サーバー（HMR 付き）をまとめて起動するには:
+
+```bash
+make dev
+```
+
+これは `scorix dev` を実行します。アプリケーションウィンドウが自動的に開き、フロントエンドの編集はライブでホットリロードされ、
+Go バックエンドへの IPC 呼び出しがエンドツーエンドで動作します。
+
+---
+
+## プロジェクト構造
+
+| パス | 説明 |
+| :--- | :--- |
+| `main.go` | エントリーポイント — アプリ + ブラウザー/アップデーターモジュールを配線し、`app` または `web` モードを選択します。 |
+| `proto/app.proto` | IPC コントラクト。ハンドラー（`internal/handler`）と型（`internal/types`）はここから**生成**されます。 |
+| `etc/schema.sql` | DB スキーマ。sqlx の CRUD モデル（`internal/model`）はここから**生成**されます。 |
+| `scorix.yaml` | 唯一の設定ソース: ビルドレシピ + ランタイムマニフェスト（アプリ、ウィンドウ、ロガー、モジュール）。 |
+| `internal/` | バックエンド: 生成された `handler`/`types`、`logic/<service>`、`model`（sqlx）、`svc`、`config`。 |
+| `pkg/` | 再利用可能な Go パッケージ（`netx` の SSH/プロキシダイヤラー、`util` のキーエンコーディング）。 |
+| `shell/` | Next.js フロントエンド（React、Tailwind、Shadcn UI）。`.scorix/dist` にビルドされます。 |
+| `doc/` | Nextra で構築されたドキュメントサイト（今ご覧になっているもの）。 |
+| `scripts/` | `release.sh` — バージョン更新ヘルパー。 |
+| `dev/` | ローカルの Redis トポロジー用の Docker Compose ファイル。 |
+| `docker/` | `Dockerfile_web` — web/server イメージ（CI によりビルド・プッシュされます）。 |

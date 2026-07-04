@@ -1,0 +1,143 @@
+# Web モードでのデプロイ
+
+RedisHub は集中管理型の Web アプリケーションとしてデプロイできます。これにより、すべてのマシンにネイティブクライアントをインストールすることなく、チームは任意のブラウザから共有の Redis 管理コンソールにアクセスできます。
+
+## 仕組み
+
+**Web モード**で実行すると、RedisHub は組み込みの HTTP サーバーを起動し、UI を配信するとともにバックエンドで Redis 操作を処理します。すべての接続プロファイルと設定は、サーバー上の集中管理型データベース（`app.dat`）に保存されます。
+
+## 設定
+
+設定は `scorix.yaml` に記述され、ビルド時にバイナリへ埋め込まれます。デフォルトは次のようになっています。
+
+```yaml
+# scorix.yaml
+mode: app           # default; switch to web via env / --mode (below)
+
+web:
+  host: 127.0.0.1   # loopback by default (secure)
+  port: 8080        # the port to serve the UI
+```
+
+### 環境変数
+
+設定は埋め込まれているため、デプロイ時には環境変数によって実行時にオーバーライドします（再ビルド不要）。これは Docker で推奨される方法です。
+
+- `SCORIX_MODE`: Web モードを有効にするには `web` を設定します（または `--mode web` を渡します）。
+- `SCORIX_WEB_HOST`: サーバーをバインドする IP アドレス（例: `0.0.0.0`）。
+- `SCORIX_WEB_PORT`: リッスンするポート（デフォルトは `8080`）。
+- `SCORIX_MASTER_KEY`（**Docker/Web では必須**）: 保存された認証情報（Redis/Sentinel のパスワード、SSH 鍵とパスフレーズ、TLS 鍵）を暗号化するために使用する base64 エンコードされた 32 バイトのキーです。デスクトップではこのキーは OS のキーチェーンに保存されますが、コンテナにはキーチェーンがないため、明示的に指定する必要があります。`openssl rand -base64 32` で生成できます。
+
+> [!IMPORTANT]
+> `SCORIX_MASTER_KEY` は**一度だけ**生成し、起動のたびにまったく同じ値を再利用してください。イメージ内ではなくシークレットマネージャーに保管してください。キーが存在しない場合、サーバーは起動を拒否します。また、後でキーが**変更されたり失われたりすると、保存されているすべての認証情報が永久に復元不能になります**（すべてのパスワードを再入力する必要が生じます）。`app.dat` と一緒にバックアップしてください。
+
+---
+
+## Docker でのデプロイ
+
+Docker を使用するのが、RedisHub を Web モードでデプロイする推奨方法です。
+
+### 1. Docker CLI で実行する
+
+```bash
+# Generate the master key ONCE, store it safely, and reuse the same value every run:
+export SCORIX_MASTER_KEY="$(openssl rand -base64 32)"
+
+docker run -d \
+  --name redishub \
+  -p 8080:8080 \
+  -v redishub_data:/root/.local/share/RedisHub \
+  -e SCORIX_MODE=web \
+  -e SCORIX_MASTER_KEY="$SCORIX_MASTER_KEY" \
+  ghcr.io/tradalab/redishub:latest
+```
+
+### 2. Docker Compose を使用する
+
+`docker-compose.yaml` ファイルを作成します。
+
+```yaml
+services:
+  redishub:
+    image: ghcr.io/tradalab/redishub:latest
+    container_name: redishub
+    ports:
+      - "8080:8080"
+    environment:
+      - SCORIX_MODE=web
+      - SCORIX_WEB_HOST=0.0.0.0
+      - SCORIX_WEB_PORT=8080
+      # Generate once (`openssl rand -base64 32`) and keep it stable; losing it
+      # makes all stored credentials unrecoverable. Provide it via the host env
+      # or a .env file — never bake it into the image.
+      - SCORIX_MASTER_KEY=${SCORIX_MASTER_KEY:?set a base64 32-byte key, e.g. `openssl rand -base64 32`}
+    volumes:
+      - redishub_data:/root/.local/share/RedisHub
+    restart: unless-stopped
+
+volumes:
+  redishub_data:
+```
+
+---
+
+## データの永続化
+
+RedisHub は SQLite データベース（`app.dat`）を使用して、接続、グループ、設定を保存します。
+
+> [!IMPORTANT]
+> 公式の Docker イメージでは、データは `/root/.local/share/RedisHub` に保存されます。コンテナの再起動後もデータが確実に永続化されるよう、このパスにボリュームをマウントする**必要があります**。
+
+---
+
+## リバースプロキシと WebSocket
+
+RedisHub をリバースプロキシ（Nginx、Caddy、Traefik など）の背後で実行する場合は、`/ipc` パスに対する WebSocket 接続を正しく処理するようにリバースプロキシを設定する**必要があります**。
+
+RedisHub は、フロントエンドとバックエンド間のリアルタイム通信に WebSocket を使用します。
+
+### Nginx の例
+
+```nginx
+location / {
+    proxy_pass http://localhost:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+}
+
+# Critical: WebSocket support for /ipc
+location /ipc {
+    proxy_pass http://localhost:8080/ipc;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+    proxy_set_header Host $host;
+}
+```
+
+### Caddy の例
+
+Caddy は WebSocket を自動的に処理するため、通常はシンプルな `reverse_proxy` ディレクティブで十分です。
+
+```caddy
+example.com {
+    reverse_proxy localhost:8080
+}
+```
+
+---
+
+## セキュリティに関する推奨事項
+
+### ネットワークの分離
+可能であれば、RedisHub は内部ネットワークまたは VPN で保護された VPC 内にデプロイしてください。追加のセキュリティレイヤーなしで、Web UI を公衆インターネットに直接公開することは避けてください。
+
+---
+
+## 手動デプロイ
+
+Linux サーバー上でバイナリを直接実行する場合は、次の手順に従います。
+
+1. [Releases](https://github.com/tradalab/redishub/releases) ページから最新の Linux バイナリをダウンロードします。
+2. バイナリを実行するユーザーが、アプリケーションディレクトリへの書き込み権限（`app.dat` 用）を持っていることを確認します。
+3. Web モードで実行します（設定は埋め込まれているため、外部ファイルは不要です）: `SCORIX_MODE=web SCORIX_WEB_HOST=0.0.0.0 ./redishub`（または `./redishub --mode web`）。

@@ -1,0 +1,35 @@
+# macOS 向けのビルド
+
+macOS のビルドは Mac 上でネイティブに実行します。Intel（AMD64）と Apple Silicon（ARM64）の両アーキテクチャに対応する **ユニバーサルバイナリ** を作成し、それを `.dmg` にまとめます。
+
+## 前提条件
+
+- **Go 1.26+**
+- **Node.js 22+** + **pnpm**
+- **Xcode Command Line Tools**: `xcode-select --install` — ユニバーサルバイナリの結合に使う `lipo` を提供します。
+
+> [!NOTE]
+> ユニバーサルな `.dmg` は Mac 上でビルドする必要があります（Xcode Command Line Tools の `lipo` を使用するためです）。
+
+## ビルドの手順
+
+Mac 上で `make package`（`scorix package`）を実行します。`scorix.yaml` の `darwin/universal` ターゲットに従って、ユニバーサルバイナリをビルドし、
+`.dmg` をパッケージングします。
+
+```bash
+make package
+```
+
+内部では、次の処理が行われます。
+1. フロントエンドと Go バックエンドをビルドします。
+2. `amd64` と `arm64` のバイナリを個別にコンパイルします。
+3. `lipo` を使って、それらを 1 つのユニバーサルバイナリに結合します。
+4. それを `.app` にまとめ、その `.app` を `.dmg` にパッケージングします。
+
+## 出力先
+
+ビルドが成功すると、次のファイルが生成されます。
+
+- `artifacts/RedisHub-1.11.0-macos-universal.dmg`（バージョンは `scorix.yaml` の `app.version` に追従します）
+
+この DMG はマウントして、Applications フォルダーにドラッグすることでインストールできます。

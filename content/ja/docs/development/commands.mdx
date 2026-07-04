@@ -1,0 +1,52 @@
+# コマンドリファレンス
+
+RedisHub では、一般的な開発・テスト・ビルドのタスクを `Makefile` で統括します。すべてのコマンドはプロジェクトルートから実行してください。
+
+---
+
+## 開発サイクル
+
+| コマンド | 動作 |
+|---------|--------|
+| `make dev` | Next.js 開発サーバー + HMR（`scorix dev`）でアプリを実行 — メインのワークフロー |
+| `make generate` | proto からハンドラー/型を、schema から sqlx モデルを再生成（`scorix generate proto/model`） |
+| `make deps` | バックエンドとフロントエンドのすべての依存関係をインストール |
+| `make shell-install` | フロントエンドの依存関係のみをインストール |
+| `make doctor` | ツールチェーンとランタイム依存関係をチェック（`scorix doctor`） |
+
+---
+
+## テストと品質
+
+| コマンド | 動作 |
+|---------|--------|
+| `make test` | Go バックエンドのテストを実行 |
+| `make lint` | 完全なリンティングを実行（Go vet + ESLint） |
+| `make lint-go` | Go vet のみを実行 |
+
+---
+
+## Redis インフラストラクチャ（Docker）
+
+| コマンド | 動作 |
+|---------|--------|
+| `make redis-up` | すべての Redis コンテナ（Standalone、Sentinel、Cluster）を起動 |
+| `make redis-down` | Redis コンテナを停止して削除 |
+| `make redis-init-cluster` | クラスターのシャーディングを初期化（初回のみ） |
+| `make redis-status` | コンテナのステータスを表示 |
+| `make redis-logs` | すべての Redis コンテナのログを追跡 |
+
+---
+
+## ビルドとリリース
+
+| コマンド | 動作 |
+|---------|--------|
+| `make build` | ホスト向けの単一の本番バイナリをビルド（`scorix build`） |
+| `make package` | ビルド + ネイティブインストーラーへのラップ — `scorix.yaml` に従い msi/dmg/appimage を生成（`scorix package`） |
+| `make clean` | ビルド成果物と dist を削除 |
+
+---
+
+> [!TIP]
+> ビルドが失敗した場合は、`make doctor` を実行してツールチェーンをチェックしてください。
