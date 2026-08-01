@@ -6,7 +6,7 @@
 name: doc
 image:
   repository: ghcr.io/tradalab/redishub-doc
-  tag: 3639d2c # CI overwrites this line
+  tag: 7276ce8 # CI overwrites this line
   pullPolicy: IfNotPresent
 imagePullSecrets:
   - name: ghcr-cred
