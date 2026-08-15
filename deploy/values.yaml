@@ -1,15 +1,10 @@
-# Deploy values for redishub-doc — consumed by the gitops `tradalab-service`
-# chart via ArgoCD multi-source. CI (GitHub Actions) bumps image.tag here.
-# Nextra docs site (Next.js standalone): no config file / no Infisical / no
-# migrate — just Deployment + Service + IngressRoute + Certificate.
-
 name: doc
 image:
-  repository: ghcr.io/tradalab/redishub-doc
-  tag: 7276ce8 # CI overwrites this line
+  repository: registry.gitlab.com/tradalab/redishub/doc
+  tag: prod-7276ce8 # CI overwrites this line
   pullPolicy: IfNotPresent
 imagePullSecrets:
-  - name: ghcr-cred
+  - name: gitlab-cred
 replicas: 1
 container:
   command: [] # use the image's default CMD (node server.js)
@@ -25,7 +20,6 @@ infisical:
   enabled: false
 migrate:
   enabled: false
-# Host owner: bare Host() route + renders the redirect-https Middleware.
 ingress:
   enabled: true
   host: redishub.tradalab.com

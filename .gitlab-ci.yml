@@ -1,0 +1,3 @@
+include:
+  - project: 'tradalab/gitops'
+    file: '/k8s/gitlab-ci/app-repo-deploy.gitlab-ci.yaml'

@@ -33,7 +33,8 @@ export default async function DocsLayout({
           projectLink={"https://github.com/tradalab/redishub"}
         />
       }
-      docsRepositoryBase={"https://github.com/tradalab/redishub-doc/tree/main"}
+      docsRepositoryBase={"https://github.com/tradalab/redishub"}
+      editLink={null}
       pageMap={await getPageMap(`/${lang}/docs`)}
       search={false}
     >
