@@ -2,9 +2,25 @@
 
 Thank you for your interest in contributing to RedisHub! We welcome contributions to help improve the project.
 
+## Where the Code Lives
+
+The GitHub repository is a **read-only mirror**. Development happens in a private upstream
+repository, and every sync force-updates the mirror — so a branch or a Pull Request pushed to
+GitHub cannot be merged, and gets overwritten on the next sync.
+
+- **Maintainers** work upstream: they branch off `main` there and land changes through review.
+- **Everyone else**: open a [GitHub Issue](https://github.com/tradalab/redishub/issues) describing
+  the change — a patch or a link to your fork is very welcome — and a maintainer lands it upstream.
+
+> [!NOTE]
+> The repository's [`CONTRIBUTING.md`](https://github.com/tradalab/redishub/blob/main/CONTRIBUTING.md)
+> says the same thing. That is the copy GitHub puts in front of you when you open a pull request,
+> and the one kept current.
+
 ## Contribution Workflow
 
-1. **Fork and Clone**: Fork the repository on GitHub and clone it locally.
+1. **Clone**: `git clone https://github.com/tradalab/redishub.git` (the mirror is public and always
+   current).
 2. **Branching**: Create a feature branch off of `main`.
 3. **Coding Standards**:
     - **Go**: Follow `gofmt` and standard Go idioms.
@@ -12,7 +28,7 @@ Thank you for your interest in contributing to RedisHub! We welcome contribution
     - **IPC**: Edit `proto/app.proto` and run `make generate` — never hand-edit the generated `handler.go` / `types.go` / `shell/api/index.ts`.
 4. **Testing**:
     - Ensure your changes run correctly in development mode using `make dev`.
-    - Run `make lint` and `make test` before opening a PR.
+    - Run `make lint` and `make test` before submitting your change.
 5. **Commit Messages**: Use descriptive commit messages following the [Conventional Commits](https://www.conventionalcommits.org/) format: `<type>(<scope>): <description>`.
     - `feat:`: New feature.
     - `fix:`: Bug fix.
@@ -20,12 +36,14 @@ Thank you for your interest in contributing to RedisHub! We welcome contribution
     - `refactor:`: Code changes that neither fix a bug nor add a feature.
     - `chore:`: Maintenance tasks (e.g., updating dependencies).
 
-## Pull Request Process
+## Review Process
 
-1. Submit a Pull Request targeting the `main` branch.
+1. Maintainers open a review request upstream targeting the `main` branch; contributions arriving
+   through an Issue are landed the same way.
 2. Provide a clear description of the problem solved or the feature added.
 3. Link to any relevant issues or discussions.
-4. Once your code is reviewed and approved, it will be merged by a maintainer.
+4. Once the code is reviewed and approved, a maintainer merges it — and the GitHub mirror follows
+   within a few minutes.
 
 ## Communication
 

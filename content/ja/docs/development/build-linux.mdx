@@ -7,7 +7,8 @@ AppImage のパッケージングには `linuxdeploy` と GTK/WebKit の開発�
 
 - **Go 1.26+** と **Node.js 22+** + **pnpm**
 - **AppImage 用ツール** — `linuxdeploy` に加えて `libgtk-3-dev`、`libwebkit2gtk-4.0-dev`、`libfuse2`、`patchelf`、`squashfs-tools`
-- **scorix CLI** — `go install github.com/tradalab/scorix/cmd/scorix@latest`
+- **scorix CLI** — `@latest` ではなく `go.mod` にピン留めされたバージョンをインストールしてください。
+  [はじめに](/docs/development/setup) を参照。
 
 ## ビルドの手順
 
@@ -25,7 +26,7 @@ scorix package -d . --os linux --arch amd64
 
 ## 出力先
 
-- `artifacts/RedisHub-1.11.0-linux-amd64.AppImage`（バージョンは `scorix.yaml` の `app.version` に追従します）
+- `artifacts/RedisHub-<version>-linux-amd64.AppImage`（バージョンは `scorix.yaml` の `app.version` に追従します）
 
 この AppImage は、インストール不要で最近の Linux ディストリビューションであればそのまま実行できます。
 

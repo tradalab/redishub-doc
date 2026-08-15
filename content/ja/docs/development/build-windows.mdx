@@ -7,7 +7,8 @@ Windows 用の成果物（`.msi`）は `scorix` CLI を使ってネイティブ�
 
 - **Go 1.26+** と **Node.js 22+** + **pnpm**
 - **WiX Toolset v6** — `dotnet tool install --global wix --version 6.0.2`
-- **scorix CLI** — `go install github.com/tradalab/scorix/cmd/scorix@latest`
+- **scorix CLI** — `@latest` ではなく `go.mod` にピン留めされたバージョンをインストールしてください。
+  [はじめに](/docs/development/setup) を参照。
 
 ## ビルドの手順
 
@@ -27,7 +28,7 @@ scorix package -d . --os windows --arch amd64
 
 ## 出力先
 
-- `artifacts/RedisHub-1.11.0-windows-amd64.msi`（バージョンは `scorix.yaml` の `app.version` に追従します）
+- `artifacts/RedisHub-<version>-windows-amd64.msi`（バージョンは `scorix.yaml` の `app.version` に追従します）
 
 > [!NOTE]
 > CI は、ネイティブの `windows-2022` ランナー上で同じ `scorix package` ステップを実行します。詳しくは

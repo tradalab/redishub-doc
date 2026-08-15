@@ -12,7 +12,15 @@ Ensure you have the following tools installed and available in your `PATH`:
 | **Node.js** | 22+ | Frontend runtime. |
 | **pnpm** | 10.3+ | Fast package manager (corepack enable pnpm). |
 | **Docker** | recent | Required for local Redis instances. |
-| **scorix CLI** | latest | `go install github.com/tradalab/scorix/cmd/scorix@latest` — drives `make dev/generate/build/package`. |
+| **scorix CLI** | same as `go.mod` | drives `make dev/generate/build/package` — see below. |
+
+The scorix CLI generates and packages against the framework the binary links, so install the
+version pinned in `go.mod` rather than `@latest` — a newer CLI regenerates code the pinned library
+does not match:
+
+```bash
+go install github.com/tradalab/scorix/cmd/scorix@$(go list -m -f '{{.Version}}' github.com/tradalab/scorix)
+```
 
 ### Runtime Dependencies
 
@@ -84,7 +92,10 @@ and IPC calls to the Go backend work end-to-end.
 | `internal/` | Backend: generated `handler`/`types`, `logic/<service>`, `model` (sqlx), `svc`, `config`. |
 | `pkg/` | Reusable Go packages (`netx` SSH/proxy dialers, `util` key encoding). |
 | `shell/` | The Next.js frontend (React, Tailwind, Shadcn UI), built into `.scorix/dist`. |
-| `doc/` | The Nextra-powered documentation site (what you are reading now). |
 | `scripts/` | `release.sh` — version bump helper. |
 | `dev/` | Docker Compose files for local Redis topologies. |
 | `docker/` | `Dockerfile_web` — the web/server image (built & pushed by CI). |
+
+The documentation site you are reading is **not** part of this repository — it is maintained
+separately. To suggest a change to it, open an
+[issue](https://github.com/tradalab/redishub/issues).

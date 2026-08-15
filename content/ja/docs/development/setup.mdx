@@ -12,7 +12,15 @@
 | **Node.js** | 22+ | フロントエンドのランタイム。 |
 | **pnpm** | 10.3+ | 高速なパッケージマネージャー（corepack enable pnpm）。 |
 | **Docker** | recent | ローカルの Redis インスタンスに必要です。 |
-| **scorix CLI** | latest | `go install github.com/tradalab/scorix/cmd/scorix@latest` — `make dev/generate/build/package` を駆動します。 |
+| **scorix CLI** | `go.mod` と同じ | `make dev/generate/build/package` を駆動します（下記参照）。 |
+
+scorix CLI は、バイナリがリンクするフレームワークと同じバージョンでコード生成とパッケージングを行います。
+`@latest` ではなく `go.mod` にピン留めされたバージョンをインストールしてください。新しい CLI は、ピン留めされた
+ライブラリと一致しないコードを生成してしまいます:
+
+```bash
+go install github.com/tradalab/scorix/cmd/scorix@$(go list -m -f '{{.Version}}' github.com/tradalab/scorix)
+```
 
 ### ランタイム依存関係
 
@@ -84,7 +92,9 @@ Go バックエンドへの IPC 呼び出しがエンドツーエンドで動作
 | `internal/` | バックエンド: 生成された `handler`/`types`、`logic/<service>`、`model`（sqlx）、`svc`、`config`。 |
 | `pkg/` | 再利用可能な Go パッケージ（`netx` の SSH/プロキシダイヤラー、`util` のキーエンコーディング）。 |
 | `shell/` | Next.js フロントエンド（React、Tailwind、Shadcn UI）。`.scorix/dist` にビルドされます。 |
-| `doc/` | Nextra で構築されたドキュメントサイト（今ご覧になっているもの）。 |
 | `scripts/` | `release.sh` — バージョン更新ヘルパー。 |
 | `dev/` | ローカルの Redis トポロジー用の Docker Compose ファイル。 |
 | `docker/` | `Dockerfile_web` — web/server イメージ（CI によりビルド・プッシュされます）。 |
+
+今ご覧になっているドキュメントサイトは、このリポジトリには**含まれていません**。別途メンテナンスされて
+いるため、内容への提案は [issue](https://github.com/tradalab/redishub/issues) からお願いします。

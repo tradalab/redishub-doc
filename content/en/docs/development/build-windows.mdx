@@ -7,7 +7,8 @@ step needs the WiX Toolset.
 
 - **Go 1.26+** and **Node.js 22+** + **pnpm**
 - **WiX Toolset v6** — `dotnet tool install --global wix --version 6.0.2`
-- **scorix CLI** — `go install github.com/tradalab/scorix/cmd/scorix@latest`
+- **scorix CLI** — install the version pinned in `go.mod`, not `@latest`; see
+  [Getting Started](/docs/development/setup)
 
 ## Build Process
 
@@ -28,7 +29,7 @@ Code signing is applied automatically when the signing secrets from `scorix.yaml
 
 ## Output Locations
 
-- `artifacts/RedisHub-1.11.0-windows-amd64.msi` (version tracks `app.version` in `scorix.yaml`)
+- `artifacts/RedisHub-<version>-windows-amd64.msi` (version tracks `app.version` in `scorix.yaml`)
 
 > [!NOTE]
 > CI runs the same `scorix package` step on a native `windows-2022` runner — see
