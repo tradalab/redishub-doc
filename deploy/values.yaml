@@ -1,7 +1,7 @@
 name: doc
 image:
   repository: registry.gitlab.com/tradalab/redishub/doc
-  tag: prod-53c37c61 # CI overwrites this line
+  tag: prod-056bbc6c # CI overwrites this line
   pullPolicy: IfNotPresent
 imagePullSecrets:
   - name: gitlab-cred
