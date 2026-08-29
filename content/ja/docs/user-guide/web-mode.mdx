@@ -16,7 +16,7 @@ mode: app           # default; switch to web via env / --mode (below)
 
 web:
   host: 127.0.0.1   # loopback by default (secure)
-  port: 8080        # the port to serve the UI
+  port: 7100        # the port to serve the UI
 ```
 
 ### 環境変数
@@ -25,7 +25,7 @@ web:
 
 - `SCORIX_MODE`: Web モードを有効にするには `web` を設定します（または `--mode web` を渡します）。
 - `SCORIX_WEB_HOST`: サーバーをバインドする IP アドレス（例: `0.0.0.0`）。
-- `SCORIX_WEB_PORT`: リッスンするポート（デフォルトは `8080`）。
+- `SCORIX_WEB_PORT`: リッスンするポート（デフォルトは `7100`。Docker イメージでは `8080` に固定されています）。
 - `SCORIX_MASTER_KEY`（**Docker/Web では必須**）: 保存された認証情報（Redis/Sentinel のパスワード、SSH 鍵とパスフレーズ、TLS 鍵）を暗号化するために使用する base64 エンコードされた 32 バイトのキーです。デスクトップではこのキーは OS のキーチェーンに保存されますが、コンテナにはキーチェーンがないため、明示的に指定する必要があります。`openssl rand -base64 32` で生成できます。
 
 > [!IMPORTANT]

@@ -17,7 +17,7 @@ mode: app           # default; switch to web via env / --mode (below)
 
 web:
   host: 127.0.0.1   # loopback by default (secure)
-  port: 8080        # the port to serve the UI
+  port: 7100        # the port to serve the UI
 ```
 
 ### Environment Variables
@@ -27,7 +27,7 @@ variables (no rebuild) — the recommended path for Docker:
 
 - `SCORIX_MODE`: set to `web` to enable web mode (or pass `--mode web`).
 - `SCORIX_WEB_HOST`: the IP address to bind the server (e.g., `0.0.0.0`).
-- `SCORIX_WEB_PORT`: the port to listen on (default `8080`).
+- `SCORIX_WEB_PORT`: the port to listen on (default `7100`; the Docker image pins `8080`).
 - `SCORIX_MASTER_KEY` (**required in Docker/web**): base64-encoded 32-byte key used to encrypt saved credentials (Redis/Sentinel passwords, SSH keys & passphrases, TLS keys). On desktop this key lives in the OS keychain, but containers have no keychain — so you must supply it explicitly. Generate one with `openssl rand -base64 32`.
 
 > [!IMPORTANT]
