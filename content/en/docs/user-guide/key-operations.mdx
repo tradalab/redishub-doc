@@ -19,6 +19,24 @@ RedisHub supports all major Redis data types:
 ### Strings
 View and edit plain string values. Supports different view modes (Text, JSON, Hex).
 
+### JSON (RedisJSON)
+Browse and edit RedisJSON documents (`ReJSON-RL`) directly. The document is pretty-printed on open; edit it and press **Save** to write the whole document back. Malformed JSON is rejected before it reaches the server, and the key stays a real JSON document rather than being flattened into a string.
+- **Create**: choose **JSON** as the type in the New Key dialog.
+- **Filter**: pick **rejson-rl** in the key type filter to list only JSON documents.
+- **Requires** a Redis server with the RedisJSON module. Redis 8 ships it in core; on Redis 7 you need `redis-stack`.
+
+- **Not the same as** a plain string whose value happens to be JSON: those stay `string` keys and open in the string editor's JSON view mode.
+
+### Graph (RedisGraph / FalkorDB)
+A `graphdata` key opens into a **Cypher console** rather than a value editor, because a graph has no single value to show. Type a query, press **Run** (or `Ctrl+Enter`), and read the answer either way:
+- **Graph** - an interactive node-link view. Drag to pan, scroll to zoom, hover or click a node to highlight its neighbours and see its properties. Very large results are capped at 300 nodes, with a badge saying so.
+- **Table** - every row and column exactly as the server returned it, with nodes and relationships rendered as JSON.
+
+The header shows the graph's node and relationship counts, and the labels and relationship types it contains; clicking one writes a matching query into the editor.
+- **Create**: choose **GRAPH** as the type in the New Key dialog and give it the Cypher that creates the graph.
+- **Filter**: pick **graphdata** in the key type filter to list only graphs.
+- **Requires** the graph module. RedisGraph reached end of life in 2023; [FalkorDB](https://www.falkordb.com/) is the maintained fork and speaks the same commands.
+
 ### Hashes
 Manage field-value pairs in a tabular format. Add, edit, or delete individual fields.
 

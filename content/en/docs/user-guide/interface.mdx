@@ -52,6 +52,20 @@ Press `Ctrl+K` (or `Cmd+K`) to open the **Command Palette**. This major upgrade 
 - **Command Registry**: Access built-in documentation links to Redis.io for every command directly from the palette.
 - **Persistent History**: Your command history is saved across sessions and connections, allowing you to quickly cycle through previous commands using the Up/Down arrow keys.
 
+### Analysis
+Profile a whole keyspace: how many keys of each type, how their sizes are distributed, how much memory the instance uses, which keys are the largest, and how TTLs are spread.
+
+Three modes, because the cost differs by orders of magnitude:
+- **Fast (INFO only)** - the default, and the only one that reads nothing but server counters. It touches no keys at all, so it is safe on a busy production instance. On Redis 8 it also gets the size distribution for free from `INFO keysizes`.
+- **Sampled scan** - Fast plus a bounded walk (1k / 10k / 50k / 200k keys) to find the largest keys and the TTL spread. Results are labelled *largest keys in sample*, because a sample cannot prove what the largest key in the whole keyspace is.
+- **Full scan** - walks every key. Progress streams while it runs and **Cancel** stops the server-side scan immediately.
+
+Notes on accuracy:
+- Total memory comes from `INFO`. Per-key sizes come from `MEMORY USAGE`, which estimates nested elements by sampling, so those are never summed into the instance total.
+- Keys of a module type (RedisJSON and friends) are invisible to `INFO keysizes`; the shortfall against `DBSIZE` is shown as **other** with a warning, and a scan counts them properly.
+- The last column shows **Idle** or **Freq** depending on `maxmemory-policy`: `OBJECT IDLETIME` and `OBJECT FREQ` exclude each other, so only the one your policy allows is offered.
+- On a cluster every master is scanned and the totals are combined.
+
 ### Pub/Sub
 The **Pub/Sub** tab allows you to subscribe to Redis channels and patterns.
 - **Message Streaming**: View incoming messages in real-time.
@@ -69,7 +83,19 @@ Maximize your productivity with specialized tab controls:
     - **Close Others**: Quickly close all tabs except the currently selected one.
     - **Close All**: Clear your entire workspace in one action.
 
+## Running in the Background
+
+Closing the window does not quit RedisHub - it hides to the system tray and keeps your connections open. This is what you want for an app you check on all day rather than launch and quit.
+
+- **Restore**: double-click the tray icon, or right-click it and choose **Open**.
+- **Quit for real**: right-click the tray icon and choose **Quit**.
+
+Available on Windows and Linux. On this path the updater elevates installs on its own, so an update applied from the tray still installs correctly.
+
 ## UI Customization
+
+### Language
+Switch the interface language from the settings dialog. English, Japanese and Vietnamese are available; the choice is remembered across restarts.
 
 ### Compact Mode
 For users who prefer high-density layouts, RedisHub offers a **Compact Mode**.

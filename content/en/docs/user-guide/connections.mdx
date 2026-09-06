@@ -86,6 +86,7 @@ Read-only mode is **per connection** and persists across restarts. Toggle it fro
 ### How it works
 
 - **Server-enforced, not just UI.** Writes are rejected at the command layer — covering the key editors, bulk delete, **and** the interactive Console. The blocked-command set is detected from the connected server's own `COMMAND` table (so module writes like `JSON.SET` are caught too), with a curated fallback for servers that restrict `COMMAND`.
+- **Graphs still browse.** The Cypher console switches to `GRAPH.RO_QUERY`, so reading a graph keeps working; a query that writes is refused by the server itself.
 - **Gated UI.** Add / edit / delete / rename / TTL actions are disabled, with clear feedback when a blocked action is attempted.
 - **Clear indicators.** A `READ-ONLY` badge appears in the browser header, and a lock icon marks the connection in the sidebar list.
 

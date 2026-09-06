@@ -42,6 +42,6 @@ RedisHub の開発・セットアップ・ビルドでよくある問題とそ�
 **症状**: `make dev` または `make redis-up` が「address already in use」で失敗します。
 
 **解決方法**:
-1.  競合しているポートを特定します（例: web サーバーの `8080` や Redis の `6379`）。
+1.  競合しているポートを特定します（例: web サーバーの `7100` や Redis の `6379`）。
 2.  `dev/docker-compose-*.yaml` または `scorix.yaml`（`web.port`）でポートマッピングを編集します。
 3.  RedisHub の UI で接続設定を新しいポートに合わせて更新します。

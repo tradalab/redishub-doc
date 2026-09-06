@@ -42,6 +42,6 @@ once automatically (see the `_ensure-embed` target), so you don't need to do it 
 **Symptom**: `make dev` or `make redis-up` fails with "address already in use".
 
 **Solution**:
-1.  Identify the conflicting port (e.g., `8080` for the web server or `6379` for Redis).
+1.  Identify the conflicting port (e.g., `7100` for the web server or `6379` for Redis).
 2.  Edit the port mappings in `dev/docker-compose-*.yaml` or `scorix.yaml` (`web.port`).
 3.  Update the connection settings in the RedisHub UI to match the new ports.
