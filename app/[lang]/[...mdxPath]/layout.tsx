@@ -26,7 +26,7 @@ export default async function DocsLayout({
             <div className="flex items-center gap-2">
               <Image src="/logo/favicon-96x96.png" alt="RedisHub Logo" width={32} height={32} className="object-contain"/>
               <span className="font-bold text-lg">
-                <span className="text-indigo-500">Redis</span>Hub
+                <span className="text-brand">Redis</span>Hub
               </span>
             </div>
           }

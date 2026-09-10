@@ -12,8 +12,8 @@ const LOCALES = [
   {locale: "ja", name: "日本語"},
 ]
 
-export function Header({lang, nav}: { lang: string; nav: { home: string; documentation: string } }) {
-  const {theme, setTheme} = useTheme()
+export function Header({lang, nav}: { lang: string; nav: { home: string; documentation: string; download: string } }) {
+  const {resolvedTheme, setTheme} = useTheme()
   const [mounted, setMounted] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
@@ -38,6 +38,7 @@ export function Header({lang, nav}: { lang: string; nav: { home: string; documen
   const navItems = [
     {label: nav.home, href: `/${lang}`},
     {label: nav.documentation, href: `/${lang}/docs`},
+    {label: nav.download, href: `/${lang}/download`},
   ]
 
   const localeHref = (target: string) => {
@@ -52,7 +53,7 @@ export function Header({lang, nav}: { lang: string; nav: { home: string; documen
         <Link href={`/${lang}`} className="flex items-center gap-2">
           <Image src="/logo/favicon-96x96.png" alt="RedisHub Logo" width={32} height={32} className="object-contain"/>
           <span className="font-bold text-lg">
-            <span className="text-indigo-500">Redis</span>Hub
+            <span className="text-brand">Redis</span>Hub
           </span>
         </Link>
 
@@ -65,8 +66,8 @@ export function Header({lang, nav}: { lang: string; nav: { home: string; documen
                 href={item.href}
                 className={`
                   px-2 py-2 transition-colors border-b-2
-                  ${isActive ? "border-indigo-500 text-indigo-500" : "border-transparent text-neutral-600 dark:text-neutral-400"}
-                  hover:border-indigo-500 hover:text-indigo-500
+                  ${isActive ? "border-brand text-brand" : "border-transparent text-neutral-600 dark:text-neutral-400"}
+                  hover:border-brand hover:text-brand
                 `}
               >
                 {item.label}
@@ -94,7 +95,7 @@ export function Header({lang, nav}: { lang: string; nav: { home: string; documen
                     key={l.locale}
                     href={localeHref(l.locale)}
                     onClick={() => setLangOpen(false)}
-                    className={`block px-3 py-1.5 text-sm ${l.locale === lang ? "text-indigo-500" : "text-neutral-600 dark:text-neutral-400"} hover:bg-neutral-100 dark:hover:bg-neutral-800`}
+                    className={`block px-3 py-1.5 text-sm ${l.locale === lang ? "text-brand" : "text-neutral-600 dark:text-neutral-400"} hover:bg-neutral-100 dark:hover:bg-neutral-800`}
                   >
                     {l.name}
                   </Link>
@@ -111,11 +112,11 @@ export function Header({lang, nav}: { lang: string; nav: { home: string; documen
           </Link>
           <button
             type="button"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
             className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             aria-label="Toggle theme"
           >
-            {theme === "dark" ? <SunIcon className="h-5 w-5"/> : <MoonIcon className="h-5 w-5"/>}
+            {resolvedTheme === "dark" ? <SunIcon className="h-5 w-5"/> : <MoonIcon className="h-5 w-5"/>}
           </button>
           <button
             type="button"
@@ -140,8 +141,8 @@ export function Header({lang, nav}: { lang: string; nav: { home: string; documen
                 onClick={() => setMenuOpen(false)}
                 className={`
                   px-2 py-2 rounded-md transition-colors
-                  ${isActive ? "text-indigo-500" : "text-neutral-600 dark:text-neutral-400"}
-                  hover:text-indigo-500
+                  ${isActive ? "text-brand" : "text-neutral-600 dark:text-neutral-400"}
+                  hover:text-brand
                 `}
               >
                 {item.label}

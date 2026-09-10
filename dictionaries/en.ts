@@ -2,6 +2,7 @@ const en = {
   nav: {
     home: "Home",
     documentation: "Documentation",
+    download: "Download",
   },
   landing: {
     titleBrand: "RedisHub",
@@ -22,10 +23,13 @@ const en = {
   download: {
     title: "Download RedisHub",
     subtitle: "Download the latest version of RedisHub for your system.",
-    osLabel: "Operating System",
-    archLabel: "Architecture",
-    // {target} is replaced with e.g. "Windows (amd64)"
-    button: "Download for {target}",
+    latest: "Latest release",
+    whatsNew: "what changed",
+    checksums: "SHA-256 checksums",
+    unsigned:
+      "These builds are not code-signed yet. Windows SmartScreen warns before running the installer, and macOS needs right-click then Open the first time. Both are expected; check the download against the checksums above if you want certainty.",
+    unavailable: "The release list could not be reached just now. Try again in a moment.",
+    docsLink: "Read the documentation",
   },
 }
 

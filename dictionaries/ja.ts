@@ -4,6 +4,7 @@ const ja: Dictionary = {
   nav: {
     home: "ホーム",
     documentation: "ドキュメント",
+    download: "ダウンロード",
   },
   landing: {
     titleBrand: "RedisHub",
@@ -24,9 +25,13 @@ const ja: Dictionary = {
   download: {
     title: "RedisHub をダウンロード",
     subtitle: "お使いのシステム向けの最新版 RedisHub をダウンロードします。",
-    osLabel: "オペレーティングシステム",
-    archLabel: "アーキテクチャ",
-    button: "{target} をダウンロード",
+    latest: "最新リリース",
+    whatsNew: "変更点",
+    checksums: "SHA-256 チェックサム",
+    unsigned:
+      "これらのビルドはまだコード署名されていません。Windows では SmartScreen が警告し、macOS では初回のみ右クリックから「開く」が必要です。どちらも想定どおりの動作です。確認したい場合は上のチェックサムと照合してください。",
+    unavailable: "リリース一覧を取得できませんでした。しばらくしてからもう一度お試しください。",
+    docsLink: "ドキュメントを読む",
   },
 }
 

@@ -11,7 +11,7 @@ export default async function Page({params}: { params: Promise<{ lang: string }>
       <section className="mb-24 grid items-center gap-12 md:grid-cols-2">
         <div>
           <h1 className="text-5xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            <span className="text-indigo-500 dark:text-indigo-400">{t.titleBrand}</span>
+            <span className="text-brand">{t.titleBrand}</span>
             <br />
             {t.titleRest}
           </h1>
@@ -21,13 +21,13 @@ export default async function Page({params}: { params: Promise<{ lang: string }>
           </p>
 
           <div className="mt-8 flex gap-4">
-            <Link href={`/${lang}/download`} className="rounded-lg bg-indigo-600 px-6 py-3 font-medium text-white hover:bg-indigo-500 transition">
+            <Link href={`/${lang}/download`} className="rounded-lg bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-strong">
               {t.downloadCta}
             </Link>
 
             <Link
               href={`/${lang}/docs/user-guide/web-mode`}
-              className="rounded-lg border border-indigo-600 px-6 py-3 font-medium text-indigo-600 hover:bg-indigo-50 transition dark:text-indigo-400 dark:border-indigo-400 dark:hover:bg-indigo-950/30"
+              className="rounded-lg border border-brand px-6 py-3 font-medium text-brand hover:bg-brand/10 transition dark:text-brand dark:border-brand"
             >
               {t.deployCta}
             </Link>
@@ -36,7 +36,7 @@ export default async function Page({params}: { params: Promise<{ lang: string }>
 
         <div className="relative flex justify-center md:justify-end">
           <div className="pointer-events-none absolute inset-0 flex justify-center">
-            <div className="h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl md:h-96 md:w-96 dark:bg-indigo-400/10" />
+            <div className="h-64 w-64 rounded-full bg-brand/20 blur-3xl md:h-96 md:w-96 dark:bg-brand/10" />
           </div>
           <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md">
             <Image src="/logo.png" alt="RedisHub Logo" width={500} height={500} className="w-full h-auto object-contain rounded-2xl shadow-xl" priority />
