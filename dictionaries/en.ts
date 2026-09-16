@@ -27,7 +27,7 @@ const en = {
     whatsNew: "what changed",
     checksums: "SHA-256 checksums",
     unsigned:
-      "These builds are not code-signed yet. Windows SmartScreen warns before running the installer, and macOS needs right-click then Open the first time. Both are expected; check the download against the checksums above if you want certainty.",
+      "These builds are not code-signed. Windows SmartScreen warns before running the installer, and macOS needs right-click then Open the first time. Both are expected; check the download against the checksums above if you want certainty.",
     unavailable: "The release list could not be reached just now. Try again in a moment.",
     docsLink: "Read the documentation",
   },

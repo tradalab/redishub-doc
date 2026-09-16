@@ -1,18 +1,6 @@
 import Link from "next/link"
 import {getDictionary} from "../../../../dictionaries"
 
-// The same place the app's updater looks, so this page and the update prompt can
-// never disagree about what the latest version is. RedisHub publishes with
-// `provider: github` rather than an appcast, so the release list IS the manifest
-// here - there is no appcast.json to read (measured 2026-09-10: cdn-03 answers
-// 404 for redishub).
-//
-// It replaced a baked NEXT_PUBLIC_LATEST_VERSION, which is fixed at Docker build
-// time: on 2026-09-10 this page was handing out 1.13.0 while 1.15.1 had been out
-// for four days, and nothing anywhere was red about it.
-//
-// Fetched on the SERVER: unauthenticated GitHub allows 60 requests an hour per
-// IP, and one revalidating server fetch costs at most six.
 const RELEASES = "https://api.github.com/repos/tradalab/redishub/releases/latest"
 
 type Release = {
@@ -102,11 +90,6 @@ export default async function Page({params}: {params: Promise<{lang: string}>}) 
             </p>
           ) : null}
 
-          {/* Measured on the shipped 1.15.1 MSI: Get-AuthenticodeSignature says
-              NotSigned, even though scorix.yaml asks for signing. Until the
-              certificate reaches CI the warning below is expected rather than a
-              sign of a bad download, and saying so here is cheaper than the
-              support question. */}
           <p className="mt-10 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
             {t.unsigned}
           </p>
