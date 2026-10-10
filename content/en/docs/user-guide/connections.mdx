@@ -71,6 +71,23 @@ Essential for environments where Redis nodes report internal, unreachable IPs (e
 - **Mapping**: Define rules to translate internal `ip:port` to host-reachable `ip:port`.
 - **Syntax**: `internal:port=external:port`, one entry per line.
 
+## Organizing Connections
+
+### Groups, colors and tags
+- **Groups** (folder icon in the sidebar header) gather connections such as *Local*, *Staging* and *Production*. Assign one from the **Group** field of the connection form. Which groups you left open is remembered in this browser.
+- **Colors** tint a connection's icon. A connection with no color of its own wears its group's.
+- **Tags** are free-form labels in the connection form - press `Enter` or a comma to add one. Use them for whatever the group does not already say: team, region, cluster.
+
+### Filtering
+The **Filter** box above the list matches a connection's name, host, cluster or sentinel addresses, socket path and tags. Groups holding a match open while you type, and close again when you clear the box.
+
+### Connection state
+Every opened connection shows a dot: amber while connecting, green when connected (hover for the round-trip time), red when the server stops answering. A connection you have not opened shows no dot. A group row counts its connected, connecting and unreachable connections, so an outage stays visible with the group collapsed.
+
+In the desktop app, closing the last tab of a connection disconnects it; in web mode the connection stays open for other users of the server.
+
+When a server stops answering, its tabs show a banner with the error and when RedisHub tries again. The next try comes 30 seconds after a failed check, then every 60 seconds while the server stays down; **Reconnect** tries at once.
+
 ## Read-only Mode
 
 Connecting to a production or sensitive Redis instance? Enable **Read-only Mode** to explore data with zero risk of accidental modification. When active, RedisHub blocks **every write command** on that connection.
