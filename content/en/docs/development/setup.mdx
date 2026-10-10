@@ -8,14 +8,18 @@ Ensure you have the following tools installed and available in your `PATH`:
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| **Go** | 1.26+ | Core backend logic. |
-| **Node.js** | 22+ | Frontend runtime. |
-| **pnpm** | 10.3+ | Fast package manager (corepack enable pnpm). |
+| **Go** | 1.27 | Core backend logic (`go 1.27.0` in `go.mod`). |
+| **Node.js** | 24 | Frontend runtime. |
+| **pnpm** | 11.22.0 | Pinned by `packageManager` in `shell/package.json`; run `corepack enable` and corepack picks it up. |
 | **Docker** | recent | Required for local Redis instances. |
-| **scorix CLI** | same as `go.mod` | drives `make dev/generate/build/package` — see below. |
+| **scorix CLI** | same as `go.mod` | drives `make dev/generate/build/package` - see below. |
+
+> [!WARNING]
+> Use pnpm 11, not pnpm 10. The shell's `pnpm-workspace.yaml` uses the pnpm 11 `allowBuilds` syntax;
+> pnpm 10 does not fail on it, it silently skips the native dependency builds.
 
 The scorix CLI generates and packages against the framework the binary links, so install the
-version pinned in `go.mod` rather than `@latest` — a newer CLI regenerates code the pinned library
+version pinned in `go.mod` rather than `@latest`. A newer CLI regenerates code the pinned library
 does not match:
 
 ```bash
@@ -24,11 +28,11 @@ go install github.com/tradalab/scorix/cmd/scorix@$(go list -m -f '{{.Version}}' 
 
 ### Runtime Dependencies
 
-These are loaded by the app at startup — they are **not** build dependencies:
+These are loaded by the app at startup - they are **not** build dependencies:
 
-- **Windows** — [WebView2 Evergreen Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) (preinstalled on Windows 11 / recent Windows 10).
-- **Linux** — GTK3 + WebKitGTK: `sudo apt-get install -y libgtk-3-0 libwebkit2gtk-4.1-0` (falls back to `4.0`).
-- **macOS** — none; WKWebView ships with the OS.
+- **Windows** - [WebView2 Evergreen Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) (preinstalled on Windows 11 / recent Windows 10).
+- **Linux** - GTK3 + WebKitGTK: `sudo apt-get install -y libgtk-3-0 libwebkit2gtk-4.1-0` (falls back to `4.0`).
+- **macOS** - none; WKWebView ships with the OS.
 
 > [!TIP]
 > Run `make doctor` (`scorix doctor`) to verify your toolchain and runtime dependencies.
@@ -60,11 +64,21 @@ make redis-up
 | Service | Port | Description |
 |---------|------|-------------|
 | **Standalone** | `6001` | Basic single instance. |
+| **Sentinel master / replica** | `8001` / `8002` | The data nodes the sentinel watches. |
 | **Sentinel** | `9001` | High-availability discovery node. |
 | **Cluster** | `7001-7003` | Sharded Redis nodes. |
+| **FalkorDB** | `6002` | Redis with the graph module (`GRAPH.*` commands). |
 
 > [!NOTE]
 > For the cluster setup, run `make redis-init-cluster` once after the containers are up to initialize the sharding.
+> The cluster nodes announce the host's LAN IP, so this step needs one the containers can reach, not
+> `127.0.0.1`. `dev/deploy.sh` detects it; if detection fails (or picks a VPN adapter), set it yourself
+> and use the same value for `make redis-up`, as below.
+
+```bash
+RDH_HOST_IP=192.168.x.y make redis-up
+RDH_HOST_IP=192.168.x.y make redis-init-cluster
+```
 
 ---
 
@@ -77,7 +91,28 @@ make dev
 ```
 
 This runs `scorix dev`: the application window opens automatically, frontend edits hot-reload live,
-and IPC calls to the Go backend work end-to-end.
+and IPC calls to the Go backend work end-to-end. The Next.js dev server listens on `dev.port` from
+`scorix.yaml` (`7101`). `make dev` also sets `SCORIX_LOGGER_LEVEL=debug` and `SCORIX_IPC_TRACE=1`
+unless you set them yourself.
+
+### Running in Web Mode
+
+The same binary can serve the UI over HTTP instead of opening a window. `main.go` embeds
+`.scorix/dist`, so build the frontend once first:
+
+```bash
+make build                 # builds .scorix/dist
+go run . -mode web         # or: SCORIX_MODE=web go run .
+```
+
+Then open `http://127.0.0.1:7100` (`web.host` / `web.port` in `scorix.yaml`). The flags `main.go` accepts:
+
+| Flag | Description |
+|------|-------------|
+| `-mode` | `app` (default) or `web`; defaults to `SCORIX_MODE` when set. |
+| `-addr` | Listen address override; otherwise `web.host:port`, or `SCORIX_WEB_HOST` / `SCORIX_WEB_PORT`. |
+| `-web-token` | Access token for web mode. Required when listening on anything other than loopback; empty means trust the network. |
+| `-config` | Runtime config overlay YAML (or set `SCORIX_CONFIG`). |
 
 ---
 
@@ -85,17 +120,21 @@ and IPC calls to the Go backend work end-to-end.
 
 | Path | Description |
 | :--- | :--- |
-| `main.go` | Entry point — wires the app + browser/updater modules; selects `app` or `web` mode. |
-| `proto/app.proto` | IPC contract. Handlers (`internal/handler`) and types (`internal/types`) are **generated** from it. |
-| `etc/schema.sql` | DB schema. sqlx CRUD models (`internal/model`) are **generated** from it. |
+| `main.go` | Entry point - wires the app + tray/browser/clipboard/env/updater modules; selects `app` or `web` mode. |
+| `idl/app.proto` | IPC contract. Handlers (`internal/handler`), types (`internal/types`), events (`internal/events`) and the frontend client are **generated** from it. |
+| `idl/schema.sql` | DB schema. sqlx CRUD models (`internal/model/*_model_gen.go`) and `idl/schema_gen.go` are **generated** from it. |
+| `idl/migration/` | Numbered goose migrations applied at startup (`model.migrations` in `scorix.yaml`). |
 | `scorix.yaml` | Single config source: build recipe + runtime manifest (app, window, logger, modules). |
-| `internal/` | Backend: generated `handler`/`types`, `logic/<service>`, `model` (sqlx), `svc`, `config`. |
-| `pkg/` | Reusable Go packages (`netx` SSH/proxy dialers, `util` key encoding). |
+| `internal/` | Backend: generated `handler`/`types`/`events`, `logic/<service>`, `model` (sqlx), `svc`, `config`. |
+| `pkg/` | Reusable Go packages: `netx` (SSH/proxy dialers), `util` (key encoding), `redisscan` (SCAN across cluster masters), `keyfilter` (glob/regex/substring key filters), `graphreply` (decodes `GRAPH.QUERY` replies). |
 | `shell/` | The Next.js frontend (React, Tailwind, Shadcn UI), built into `.scorix/dist`. |
-| `scripts/` | `release.sh` — version bump helper. |
+| `installer/` | Per-OS packaging sources: WiX files (`windows/`), `Info.plist` + icon (`mac/`), AppRun + `.desktop` (`linux/`). |
+| `scripts/` | `release.sh` - version bump helper. |
 | `dev/` | Docker Compose files for local Redis topologies. |
-| `docker/` | `Dockerfile_web` — the web/server image (built & pushed by CI). |
+| `docker/` | `Dockerfile_web` - the web/server image (built & pushed by CI). |
+| `deploy/values.yaml` | Deployment values for the web image; its `image.tag` tracks `app.version`. |
+| `docs/ipc-surface.md` | **Generated** list of every IPC command and event (wire names, request/reply types). |
 
-The documentation site you are reading is **not** part of this repository — it is maintained
+The documentation site you are reading is **not** part of this repository - it is maintained
 separately. To suggest a change to it, open an
 [issue](https://github.com/tradalab/redishub/issues).

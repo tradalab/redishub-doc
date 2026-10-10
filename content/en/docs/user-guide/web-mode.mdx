@@ -4,7 +4,7 @@ RedisHub can be deployed as a centralized web application. This allows your team
 
 ## How it Works
 
-When running in **Web Mode**, RedisHub starts a built-in HTTP server that serves the UI and handles Redis operations on the backend. All connection profiles and settings are stored in a centralized database (`app.dat`) on the server.
+When running in **Web Mode**, RedisHub starts a built-in HTTP server that serves the UI and handles Redis operations on the backend. All connection profiles and settings are stored in one database (`app.dat`) on the server, so everyone who opens the UI sees the same connections (see [Data Persistence](#data-persistence)).
 
 ## Configuration
 
@@ -20,24 +20,48 @@ web:
   port: 7100        # the port to serve the UI
 ```
 
+### Command-line Flags
+
+| Flag                   | Effect                                                                                       |
+|------------------------|----------------------------------------------------------------------------------------------|
+| `--mode web`           | Run in web mode (same as `SCORIX_MODE=web`).                                                 |
+| `--addr <host:port>`   | Listen address. Overrides `web.host` / `web.port` and the `SCORIX_WEB_*` variables.           |
+| `--web-token <secret>` | Require an access token for the UI and `/ipc`. See [Access Token](#access-token).             |
+| `--config <file>`      | Load a YAML [config overlay](#config-overlay) (same as `SCORIX_CONFIG`).                      |
+
 ### Environment Variables
 
-Since config is embedded, deployments override at runtime via environment
-variables (no rebuild) — the recommended path for Docker:
+Since config is embedded, deployments override it at runtime via environment
+variables (no rebuild). This is the recommended path for Docker:
 
 - `SCORIX_MODE`: set to `web` to enable web mode (or pass `--mode web`).
 - `SCORIX_WEB_HOST`: the IP address to bind the server (e.g., `0.0.0.0`).
 - `SCORIX_WEB_PORT`: the port to listen on (default `7100`; the Docker image pins `8080`).
-- `SCORIX_MASTER_KEY` (**required in Docker/web**): base64-encoded 32-byte key used to encrypt saved credentials (Redis/Sentinel passwords, SSH keys & passphrases, TLS keys). On desktop this key lives in the OS keychain, but containers have no keychain — so you must supply it explicitly. Generate one with `openssl rand -base64 32`.
+- `SCORIX_MASTER_KEY` (**required in Docker/web**): base64-encoded 32-byte key used to encrypt saved credentials (Redis/Sentinel passwords, SSH keys & passphrases, TLS keys). On desktop this key lives in the OS keychain, but containers have no keychain, so you must supply it explicitly. Generate one with `openssl rand -base64 32`.
+- `SCORIX_CONFIG`: path to a YAML config overlay (same as `--config`).
+- `SCORIX_MODULE_SQLX_DSN`: path of the database file, if you do not want the default `app.dat` in the data directory. A relative path is resolved against the data directory.
+
+The access token has no environment variable; it is set only with `--web-token`.
 
 > [!IMPORTANT]
-> Generate `SCORIX_MASTER_KEY` **once** and reuse the exact same value on every start. Store it in a secret manager — not in the image. If the key is missing the server refuses to start; if it later **changes or is lost, all stored credentials become permanently unrecoverable** (you'd have to re-enter every password). Back it up together with `app.dat`.
+> Generate `SCORIX_MASTER_KEY` **once** and reuse the exact same value on every start. Store it in a secret manager, not in the image. If the key is missing the server refuses to start; if it later **changes or is lost, all stored credentials become permanently unrecoverable** (you'd have to re-enter every password). Back it up together with `app.dat`.
+
+### Config Overlay
+
+`--config <file>` (or `SCORIX_CONFIG`) reads an external YAML file over the embedded `scorix.yaml`. It applies only to settings that can also be set from the environment, such as `web.host` and `web.port`; sealed settings such as `security` and the updater keys are dropped and logged. When a setting is given in more than one place, the environment wins over the overlay file, and the overlay file wins over the embedded config.
+
+```yaml
+# overlay.yaml
+web:
+  host: 0.0.0.0
+  port: 7100
+```
 
 ---
 
 ## Deployment with Docker
 
-Using Docker is the recommended way to deploy RedisHub in web mode.
+Using Docker is the recommended way to deploy RedisHub in web mode. The image already sets `SCORIX_MODE=web`, `SCORIX_WEB_HOST=0.0.0.0` and `SCORIX_WEB_PORT=8080`; setting them again, as the examples below do, is harmless.
 
 ### 1. Run via Docker CLI
 
@@ -71,7 +95,7 @@ services:
       - SCORIX_WEB_PORT=8080
       # Generate once (`openssl rand -base64 32`) and keep it stable; losing it
       # makes all stored credentials unrecoverable. Provide it via the host env
-      # or a .env file — never bake it into the image.
+      # or a .env file - never bake it into the image.
       - SCORIX_MASTER_KEY=${SCORIX_MASTER_KEY:?set a base64 32-byte key, e.g. `openssl rand -base64 32`}
     volumes:
       - redishub_data:/root/.local/share/RedisHub
@@ -85,10 +109,16 @@ volumes:
 
 ## Data Persistence
 
-RedisHub uses a SQLite database (`app.dat`) to store your connections, groups, and settings. 
+RedisHub uses a SQLite database (`app.dat`) to store your connections, groups, profiles, saved filters and settings. It lives in the data directory of the user running the server:
+
+- **Linux**: `$XDG_DATA_HOME/RedisHub`, or `~/.local/share/RedisHub` when `XDG_DATA_HOME` is not set.
+- **Windows**: `%APPDATA%\RedisHub`.
+- **macOS**: `~/Library/Application Support/RedisHub`.
+
+Set `SCORIX_MODULE_SQLX_DSN` to keep the database somewhere else.
 
 > [!IMPORTANT]
-> In the official Docker image, data is stored in `/root/.local/share/RedisHub`. You **must** mount a volume to this path to ensure your data is persisted across container restarts.
+> The official Docker image runs as `root`, so data is stored in `/root/.local/share/RedisHub`. You **must** mount a volume to this path to ensure your data is persisted across container restarts.
 
 ---
 
@@ -131,15 +161,75 @@ example.com {
 
 ## Security Recommendations
 
+### Access Token
+Without a token, anyone who can reach the port has full access to every saved connection. Start the server with `--web-token <secret>` to require a token for both the UI and the `/ipc` WebSocket. A request is accepted when it carries the token in any of these ways:
+
+- **Browser**: open `https://your-host/?token=<secret>` once. The server answers with an HttpOnly session cookie (`scorix_token`, marked `Secure` when the request came over HTTPS or with `X-Forwarded-Proto: https`), so later requests carry the token without the query string.
+- **Header**: `Authorization: Bearer <secret>`.
+
+When the server binds to a non-loopback address (such as `0.0.0.0`) without a token, it logs a warning that every network client is trusted.
+
+There is no environment variable for the token. The Docker image starts with `CMD ["/app/redishub"]` and no entrypoint, so pass the flag by overriding the command:
+
+```bash
+docker run -d \
+  --name redishub \
+  -p 8080:8080 \
+  -v redishub_data:/root/.local/share/RedisHub \
+  -e SCORIX_MASTER_KEY="$SCORIX_MASTER_KEY" \
+  ghcr.io/tradalab/redishub:latest \
+  /app/redishub --web-token "$REDISHUB_WEB_TOKEN"
+```
+
+In Docker Compose, add the same command to the service:
+
+```yaml
+    command: ["/app/redishub", "--web-token", "${REDISHUB_WEB_TOKEN:?set an access token}"]
+```
+
 ### Network Isolation
-If possible, deploy RedisHub within your internal network or a VPN-protected VPC. Avoid exposing the Web UI directly to the public internet without additional security layers.
+If possible, deploy RedisHub within your internal network or a VPN-protected VPC. Avoid exposing the Web UI directly to the public internet without additional security layers, and serve it over HTTPS (for example through the reverse proxy above) so the token is not sent in clear text.
 
 ---
 
-## Manual Deployment
+## Behavior in Web Mode
 
-If you prefer to run the binary directly on a Linux server:
+- **Updates**: in-app updates are off. The **Automatic Updates** and **Check Update** settings are disabled; update the server by pulling a new image.
+- **Shared connections**: connections are opened on the server and shared by everyone using it. When one user closes the last tab of a connection, the connection stays open for the others. **Disconnect** (from the connection's **...** menu or its left-rail icon) closes it on the server.
 
-1. Download the latest Linux binary from the [Releases](https://github.com/tradalab/redishub/releases) page.
-2. Ensure the user running the binary has write permissions to the application directory (for `app.dat`).
-3. Run in web mode (config is embedded — no external file needed): `SCORIX_MODE=web SCORIX_WEB_HOST=0.0.0.0 ./redishub` (or `./redishub --mode web`).
+---
+
+## Building from Source
+
+The server binary is not published on the Releases page, which ships the desktop installers (`.msi`, `.dmg`, `.AppImage`). To run web mode without the official image, build it from the [source](https://github.com/tradalab/redishub).
+
+### Your own image
+
+From the repository root:
+
+```bash
+docker build -f docker/Dockerfile_web -t redishub-web .
+```
+
+The result runs exactly like the official image.
+
+### A plain binary
+
+This follows the steps of `docker/Dockerfile_web`. You need Go 1.27, Node.js 24, pnpm and a C compiler (the build uses CGO).
+
+```bash
+git clone https://github.com/tradalab/redishub.git
+cd redishub
+
+# 1. Build the UI; the output goes to shell/dist
+(cd shell && pnpm install --frozen-lockfile && pnpm run build)
+
+# 2. Embed the UI and build the server binary
+rm -rf .scorix/dist && mkdir -p .scorix && cp -r shell/dist .scorix/dist
+CGO_ENABLED=1 go build -tags server -ldflags "-s -w" -o redishub .
+
+# 3. Run it in web mode
+SCORIX_MASTER_KEY="$SCORIX_MASTER_KEY" ./redishub --mode web --addr 0.0.0.0:7100 --web-token "$REDISHUB_WEB_TOKEN"
+```
+
+The user running the binary needs write access to its [data directory](#data-persistence), where `app.dat` is created on first start.

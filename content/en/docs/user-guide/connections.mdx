@@ -4,15 +4,23 @@ RedisHub provides a versatile connection manager designed to handle complex netw
 
 ## Adding a New Connection
 
-1. Click on the **+** (Plus) icon in the sidebar.
-2. The connection dialog is organized into five specialized tabs:
-    - **General**: Core configuration (Mode, Address, Credentials).
-    - **Optional**: Performance tuning and NAT traversal.
+1. Open the Connections panel from the folder-tree icon at the top of the left rail, then click the **+** (Plus) icon in the panel header.
+2. The **New Connection** dialog is organized into five tabs:
+    - **General**: Core configuration (Name, Color, Tags, Mode, Group, Address, Credentials).
+    - **Optional**: Read-only mode, performance tuning and NAT traversal.
     - **Proxy**: HTTP/SOCKS5 proxy settings.
     - **TLS/SSL**: Encryption and certificate management.
     - **SSH Tunnel**: Secure access to private networks.
+3. Click **Test Connection** to check the settings without saving, then **Save**.
 
 ![New Connection Dialog](/assets/en/new-connection.png)
+
+## Connecting and Managing Connections
+
+- **Connect**: double-click a connection in the list. RedisHub connects to the database you used last on it and opens its **General** tab.
+- **The row menu**: hover a connection and click its **...** button for **Connect**, **Disconnect**, **Update** (opens the **Update Connection** dialog) and **Delete**. A group's **...** menu has **Update** and **Delete**.
+- **Deleting** asks for confirmation. Deleting a connection that is open also disconnects it and closes its tabs.
+- An open connection can also be closed from its icon in the left rail (right-click > **Disconnect**); see [Left Rail](/docs/user-guide/interface#left-rail).
 
 ## Connection Modes
 
@@ -35,10 +43,13 @@ Designed for high-availability setups.
 
 ## Advanced Networking
 
+SSH tunnels, TLS settings and proxies are saved **profiles** that any number of connections can share. In the **SSH Tunnel**, **TLS/SSL** or **Proxy** tab, turn on **Enable SSH Tunnel**, **Enable TLS/SSL** or **Enable Proxy**, then pick a profile from the dropdown. The **...** button beside the dropdown opens the profile manager (**SSH Configurations**, **TLS/SSL Configurations** or **Proxy Configurations**), where you add, edit and delete profiles.
+
 ### SSH Tunnel
 Connect to Redis servers located within private VPCs or behind firewalls.
 - **Dynamic Routing**: RedisHub uses a dynamic SSH dialer that can reach any discovered node (Sentinel replicas, Cluster shards) through a single SSH tunnel.
-- **Authentication**: Compatible with password, private key (PEM), and SSH agent.
+- **Authentication**: the profile's **Auth Type** is **Password**, **Keypair** (a PEM private key with an optional passphrase) or **SSH Agent**.
+- **Test Connection** in the SSH profile manager checks the tunnel on its own.
 
 ![SSH Configuration](/assets/en/ssh-configuration.png)
 
@@ -74,17 +85,17 @@ Essential for environments where Redis nodes report internal, unreachable IPs (e
 ## Organizing Connections
 
 ### Groups, colors and tags
-- **Groups** (folder icon in the sidebar header) gather connections such as *Local*, *Staging* and *Production*. Assign one from the **Group** field of the connection form. Which groups you left open is remembered in this browser.
+- **Groups** (folder-plus icon in the Connections panel header) gather connections such as *Local*, *Staging* and *Production*. Assign one from the **Group** field of the connection form. Which groups you left open is remembered in this browser.
 - **Colors** tint a connection's icon. A connection with no color of its own wears its group's.
 - **Tags** are free-form labels in the connection form - press `Enter` or a comma to add one. Use them for whatever the group does not already say: team, region, cluster.
 
 ### Filtering
-The **Filter** box above the list matches a connection's name, host, cluster or sentinel addresses, socket path and tags. Groups holding a match open while you type, and close again when you clear the box.
+The **Filter** box above the list matches a connection's name, `host:port`, cluster or sentinel addresses, socket path and tags. Groups holding a match open while you type, and close again when you clear the box.
 
 ### Connection state
-Every opened connection shows a dot: amber while connecting, green when connected (hover for the round-trip time), red when the server stops answering. A connection you have not opened shows no dot. A group row counts its connected, connecting and unreachable connections, so an outage stays visible with the group collapsed.
+Every opened connection shows a dot - in the list, on its left-rail icon, on its tabs and in its console: amber while connecting, green when connected (hover for the round-trip time), red when the server stops answering. A connection you have not opened shows no dot. A group row counts its connected, connecting and unreachable connections, so an outage stays visible with the group collapsed.
 
-In the desktop app, closing the last tab of a connection disconnects it; in web mode the connection stays open for other users of the server.
+Closing the last tab of a connection disconnects it in the desktop app but not in web mode; see [Managing tabs](/docs/user-guide/interface#managing-tabs).
 
 When a server stops answering, its tabs show a banner with the error and when RedisHub tries again. The next try comes 30 seconds after a failed check, then every 60 seconds while the server stays down; **Reconnect** tries at once.
 
@@ -97,12 +108,12 @@ Connecting to a production or sensitive Redis instance? Enable **Read-only Mode*
 Read-only mode is **per connection** and persists across restarts. Toggle it from any of:
 
 - The **Read-only** switch in the connection dialog's **Optional** tab.
-- The **Views** menu (or the lock toggle) in the key browser header.
+- The **Read-only** item in the **Views** menu of the key browser header.
 - Clicking the amber **READ-ONLY** badge to turn it back off.
 
 ### How it works
 
-- **Server-enforced, not just UI.** Writes are rejected at the command layer — covering the key editors, bulk delete, **and** the interactive Console. The blocked-command set is detected from the connected server's own `COMMAND` table (so module writes like `JSON.SET` are caught too), with a curated fallback for servers that restrict `COMMAND`.
+- **Server-enforced, not just UI.** Writes are rejected at the command layer, covering the key editors, bulk delete, **and** the interactive Console. The blocked-command set is detected from the connected server's own `COMMAND` table (so module writes like `JSON.SET` are caught too), with a curated fallback for servers that restrict `COMMAND`.
 - **Graphs still browse.** The Cypher console switches to `GRAPH.RO_QUERY`, so reading a graph keeps working; a query that writes is refused by the server itself.
 - **Gated UI.** Add / edit / delete / rename / TTL actions are disabled, with clear feedback when a blocked action is attempted.
 - **Clear indicators.** A `READ-ONLY` badge appears in the browser header, and a lock icon marks the connection in the sidebar list.
@@ -111,16 +122,12 @@ Read-only mode is **per connection** and persists across restarts. Toggle it fro
 
 ## Server Information
 
-Once connected, RedisHub provides a detailed **Server Info** sidebar (accessible by clicking the information icon next to the database selector).
+Once connected, the **General** tab shows the server's information. It opens when you connect, and you can reopen it from **Views** > **General** in the key browser header.
 
-### Real-time Statistics
-Monitor critical server metrics at a glance:
-- **Memory Usage**: RSS, Peak Memory, and Fragmentation Ratio.
-- **Clients**: Number of connected clients and blocked clients.
-- **Persistence**: Last save time and RDB/AOF status.
-- **Stats**: Total commands processed and instantaneous OPS (Operations Per Second).
+### Summary and sections
+- **Summary cards** at the top show **Memory** (used memory), **Keys** in the current database, **Clients** (connected clients) and **Version** with the server's uptime.
+- **Sections** on the left list every `INFO` section the server returns (Server, Clients, Memory, Persistence, Stats, Replication, Keyspace and so on). Pick one to see all its fields in a property/value table.
 
 ### Refresh Controls
-Keep your server data up-to-date with flexible refresh options:
-- **Manual Refresh**: Click the refresh icon to fetch the latest server info immediately.
-- **Auto-Refresh**: Enable auto-refresh (default: 10s) to keep the metrics flowing without manual intervention. You can configure the refresh interval to balance between real-time data and server load.
+- **Manual Refresh**: click **Refresh** to fetch the latest server info immediately.
+- **Auto-Refresh**: off by default. Turn on the switch next to **Auto** to refresh on an interval of 5s, 10s (the default), 30s or 60s.

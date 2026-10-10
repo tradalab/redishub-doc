@@ -8,11 +8,15 @@
 
 | ツール | バージョン | 備考 |
 |------|---------|-------|
-| **Go** | 1.26+ | バックエンドの中核ロジック。 |
-| **Node.js** | 22+ | フロントエンドのランタイム。 |
-| **pnpm** | 10.3+ | 高速なパッケージマネージャー（corepack enable pnpm）。 |
+| **Go** | 1.27 | バックエンドの中核ロジック（`go.mod` の `go 1.27.0`）。 |
+| **Node.js** | 24 | フロントエンドのランタイム。 |
+| **pnpm** | 11.22.0 | `shell/package.json` の `packageManager` でピン留めされています。`corepack enable` を実行すると corepack がこのバージョンを使います。 |
 | **Docker** | recent | ローカルの Redis インスタンスに必要です。 |
 | **scorix CLI** | `go.mod` と同じ | `make dev/generate/build/package` を駆動します（下記参照）。 |
+
+> [!WARNING]
+> pnpm 10 ではなく pnpm 11 を使ってください。shell の `pnpm-workspace.yaml` は pnpm 11 の `allowBuilds` 構文を使っています。
+> pnpm 10 はこれをエラーにせず、ネイティブ依存関係のビルドを黙ってスキップします。
 
 scorix CLI は、バイナリがリンクするフレームワークと同じバージョンでコード生成とパッケージングを行います。
 `@latest` ではなく `go.mod` にピン留めされたバージョンをインストールしてください。新しい CLI は、ピン留めされた
@@ -26,9 +30,9 @@ go install github.com/tradalab/scorix/cmd/scorix@$(go list -m -f '{{.Version}}' 
 
 これらは起動時にアプリによって読み込まれます。ビルド時の依存関係では**ありません**。
 
-- **Windows** — [WebView2 Evergreen Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)（Windows 11 / 最近の Windows 10 にはプリインストール済み）。
-- **Linux** — GTK3 + WebKitGTK: `sudo apt-get install -y libgtk-3-0 libwebkit2gtk-4.1-0`（`4.0` にフォールバックします）。
-- **macOS** — 不要。WKWebView は OS に同梱されています。
+- **Windows** - [WebView2 Evergreen Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)（Windows 11 / 最近の Windows 10 にはプリインストール済み）。
+- **Linux** - GTK3 + WebKitGTK: `sudo apt-get install -y libgtk-3-0 libwebkit2gtk-4.1-0`（`4.0` にフォールバックします）。
+- **macOS** - 不要。WKWebView は OS に同梱されています。
 
 > [!TIP]
 > `make doctor`（`scorix doctor`）を実行して、ツールチェーンとランタイム依存関係を検証してください。
@@ -60,11 +64,21 @@ make redis-up
 | サービス | ポート | 説明 |
 |---------|------|-------------|
 | **Standalone** | `6001` | 基本的な単一インスタンス。 |
+| **Sentinel master / replica** | `8001` / `8002` | Sentinel が監視するデータノード。 |
 | **Sentinel** | `9001` | 高可用性ディスカバリーノード。 |
 | **Cluster** | `7001-7003` | シャーディングされた Redis ノード。 |
+| **FalkorDB** | `6002` | グラフモジュール付きの Redis（`GRAPH.*` コマンド）。 |
 
 > [!NOTE]
 > クラスター構成では、コンテナ起動後に一度だけ `make redis-init-cluster` を実行して、シャーディングを初期化してください。
+> クラスターノードはホストの LAN IP をアナウンスするため、このステップには `127.0.0.1` ではなく、コンテナから到達できる IP が
+> 必要です。`dev/deploy.sh` が自動検出しますが、検出に失敗した場合（または VPN アダプターを拾った場合）は自分で指定し、
+> `make redis-up` にも同じ値を使ってください。以下のとおりです。
+
+```bash
+RDH_HOST_IP=192.168.x.y make redis-up
+RDH_HOST_IP=192.168.x.y make redis-init-cluster
+```
 
 ---
 
@@ -77,7 +91,27 @@ make dev
 ```
 
 これは `scorix dev` を実行します。アプリケーションウィンドウが自動的に開き、フロントエンドの編集はライブでホットリロードされ、
-Go バックエンドへの IPC 呼び出しがエンドツーエンドで動作します。
+Go バックエンドへの IPC 呼び出しがエンドツーエンドで動作します。Next.js 開発サーバーは `scorix.yaml` の `dev.port`（`7101`）で
+待ち受けます。また `make dev` は、自分で設定していない限り `SCORIX_LOGGER_LEVEL=debug` と `SCORIX_IPC_TRACE=1` を設定します。
+
+### Web モードでの実行
+
+同じバイナリで、ウィンドウを開く代わりに HTTP で UI を配信できます。`main.go` は `.scorix/dist` を埋め込むため、
+先に一度フロントエンドをビルドしてください。
+
+```bash
+make build                 # builds .scorix/dist
+go run . -mode web         # or: SCORIX_MODE=web go run .
+```
+
+その後 `http://127.0.0.1:7100`（`scorix.yaml` の `web.host` / `web.port`）を開きます。`main.go` が受け付けるフラグは次のとおりです。
+
+| フラグ | 説明 |
+|------|-------------|
+| `-mode` | `app`（デフォルト）または `web`。`SCORIX_MODE` が設定されていればそれがデフォルトになります。 |
+| `-addr` | 待ち受けアドレスの上書き。指定しない場合は `web.host:port`、または `SCORIX_WEB_HOST` / `SCORIX_WEB_PORT`。 |
+| `-web-token` | Web モードのアクセストークン。ループバック以外で待ち受ける場合は必須です。空の場合はネットワークを信頼します。 |
+| `-config` | ランタイム設定のオーバーレイ YAML（または `SCORIX_CONFIG` を設定）。 |
 
 ---
 
@@ -85,16 +119,20 @@ Go バックエンドへの IPC 呼び出しがエンドツーエンドで動作
 
 | パス | 説明 |
 | :--- | :--- |
-| `main.go` | エントリーポイント — アプリ + ブラウザー/アップデーターモジュールを配線し、`app` または `web` モードを選択します。 |
-| `proto/app.proto` | IPC コントラクト。ハンドラー（`internal/handler`）と型（`internal/types`）はここから**生成**されます。 |
-| `etc/schema.sql` | DB スキーマ。sqlx の CRUD モデル（`internal/model`）はここから**生成**されます。 |
+| `main.go` | エントリーポイント - アプリ + tray/browser/clipboard/env/updater モジュールを配線し、`app` または `web` モードを選択します。 |
+| `idl/app.proto` | IPC コントラクト。ハンドラー（`internal/handler`）、型（`internal/types`）、イベント（`internal/events`）、フロントエンドクライアントはここから**生成**されます。 |
+| `idl/schema.sql` | DB スキーマ。sqlx の CRUD モデル（`internal/model/*_model_gen.go`）と `idl/schema_gen.go` はここから**生成**されます。 |
+| `idl/migration/` | 起動時に適用される番号付きの goose マイグレーション（`scorix.yaml` の `model.migrations`）。 |
 | `scorix.yaml` | 唯一の設定ソース: ビルドレシピ + ランタイムマニフェスト（アプリ、ウィンドウ、ロガー、モジュール）。 |
-| `internal/` | バックエンド: 生成された `handler`/`types`、`logic/<service>`、`model`（sqlx）、`svc`、`config`。 |
-| `pkg/` | 再利用可能な Go パッケージ（`netx` の SSH/プロキシダイヤラー、`util` のキーエンコーディング）。 |
+| `internal/` | バックエンド: 生成された `handler`/`types`/`events`、`logic/<service>`、`model`（sqlx）、`svc`、`config`。 |
+| `pkg/` | 再利用可能な Go パッケージ: `netx`（SSH/プロキシダイヤラー）、`util`（キーエンコーディング）、`redisscan`（クラスターのマスター全体での SCAN）、`keyfilter`（glob/regex/substring のキーフィルター）、`graphreply`（`GRAPH.QUERY` の応答のデコード）。 |
 | `shell/` | Next.js フロントエンド（React、Tailwind、Shadcn UI）。`.scorix/dist` にビルドされます。 |
-| `scripts/` | `release.sh` — バージョン更新ヘルパー。 |
+| `installer/` | OS ごとのパッケージングソース: WiX ファイル（`windows/`）、`Info.plist` + アイコン（`mac/`）、AppRun + `.desktop`（`linux/`）。 |
+| `scripts/` | `release.sh` - バージョン更新ヘルパー。 |
 | `dev/` | ローカルの Redis トポロジー用の Docker Compose ファイル。 |
-| `docker/` | `Dockerfile_web` — web/server イメージ（CI によりビルド・プッシュされます）。 |
+| `docker/` | `Dockerfile_web` - web/server イメージ（CI によりビルド・プッシュされます）。 |
+| `deploy/values.yaml` | Web イメージのデプロイ用の値。`image.tag` は `app.version` に追従します。 |
+| `docs/ipc-surface.md` | すべての IPC コマンドとイベント（ワイヤー名、リクエスト/応答の型）の**生成された**一覧。 |
 
 今ご覧になっているドキュメントサイトは、このリポジトリには**含まれていません**。別途メンテナンスされて
 いるため、内容への提案は [issue](https://github.com/tradalab/redishub/issues) からお願いします。

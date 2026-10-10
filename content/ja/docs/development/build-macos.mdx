@@ -4,9 +4,11 @@ macOS のビルドは Mac 上でネイティブに実行します。Intel（AMD6
 
 ## 前提条件
 
-- **Go 1.26+**
-- **Node.js 22+** + **pnpm**
-- **Xcode Command Line Tools**: `xcode-select --install` — ユニバーサルバイナリの結合に使う `lipo` を提供します。
+- **Go 1.27**
+- **Node.js 24** + **pnpm 11.22.0**
+- **Xcode Command Line Tools**: `xcode-select --install` - ユニバーサルバイナリの結合に使う `lipo` を提供します。
+- **scorix CLI** - `@latest` ではなく `go.mod` にピン留めされたバージョンをインストールしてください。
+  [はじめに](/ja/docs/development/setup) を参照。
 
 > [!NOTE]
 > ユニバーサルな `.dmg` は Mac 上でビルドする必要があります（Xcode Command Line Tools の `lipo` を使用するためです）。
@@ -26,6 +28,9 @@ make package
 3. `lipo` を使って、それらを 1 つのユニバーサルバイナリに結合します。
 4. それを `.app` にまとめ、その `.app` を `.dmg` にパッケージングします。
 
+`.app` は署名も公証もされていません。`scorix.yaml` で署名は意図的に無効化されている（`sign.macos.enabled: false`、`notarize: false`）
+ため、初回起動時に Gatekeeper が警告を表示します。
+
 ## 出力先
 
 ビルドが成功すると、次のファイルが生成されます。
@@ -33,3 +38,8 @@ make package
 - `artifacts/RedisHub-<version>-macos-universal.dmg`（バージョンは `scorix.yaml` の `app.version` に追従します）
 
 この DMG はマウントして、Applications フォルダーにドラッグすることでインストールできます。
+
+> [!NOTE]
+> CI は、ネイティブの `macos-14` ランナー上で同じ `scorix package` ステップを実行します。`.github/workflows/release.yml`
+> が `tradalab/scorix` の再利用可能な `scorix-release.yml` を呼び出し、`v*` タグがプッシュされると `scorix.yaml` の
+> すべてのターゲットを 1 つのマトリックスとしてビルドします。

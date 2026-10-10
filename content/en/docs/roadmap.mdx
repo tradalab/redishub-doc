@@ -2,20 +2,23 @@
 
 Our vision for RedisHub is to build the ultimate command center for the Redis ecosystem. Here is our strategic development map.
 
-## (In Progress)
+## Shipped
 - [x] **Performance Engine**: Optimized scanning and rendering for databases exceeding 500k+ keys.
-- [x] **Redis Hub Web**: A lightweight, cloud-ready web interface for browser-based access.
+- [x] **Redis Hub Web**: A lightweight, cloud-ready web interface for browser-based access (v1.9.0).
 - [x] **Monitoring & Statistics**: Real-time server info refresh and MONITOR tool (v1.11.0).
-- [x] **Advanced Filtering**: Support for complex Regex and multi-pattern search in the key browser (v1.15.0).
+- [x] **Read-only Mode**: Server-enforced blocking of every write command, per connection (v1.13.0).
+- [x] **Advanced Filtering**: Substring, glob and regex patterns, several at once, with saved filter presets (v1.15.0).
 - [x] **Module Support**: Browse and edit RedisJSON documents, and query graphs with Cypher on RedisGraph / FalkorDB (v1.15.0).
-- [ ] **Data Export/Import**: Export keys and results to JSON, CSV, and Msgpack.
+- [x] **Keyspace Analysis**: Memory overview, key counts by type, size distribution, largest keys and TTL spread (v1.15.0).
+- [x] **Connection Awareness**: Live connection state, colors for connections and groups (v1.16.0), tags, filtering by host and tag, and an icon per open connection in the left rail (v1.17.0).
 
-## (Planned)
-- [ ] **Visual Memory Profiler**: Deep analysis of memory usage per key/prefix with tree-map visualization.
+## Planned
+- [ ] **Data Export/Import**: Export keys and results to JSON, CSV, and Msgpack.
+- [ ] **Visual Memory Profiler**: Keyspace Analysis already covers the memory overview, size distribution, largest keys and TTL spread. What remains is memory usage per key prefix, with tree-map visualization.
 - [ ] **Enhanced Lua Suite**: Professional editor with syntax highlighting, debugging, and script library management.
 - [ ] **Visual Query Builder**: Create complex Redis queries via an intuitive drag-and-drop interface.
 
-## (Future Vision)
+## Future Vision
 - [ ] **Collaboration Suite**: Share connection profiles and analysis snippets securely with your team.
 - [ ] **Data Transformation Engine**: Built-in tools for seamless data migration and format conversion (JSON, CSV, Protobuf).
 - [ ] **Plugin Ecosystem**: Open API for community-driven extensions and custom themes.

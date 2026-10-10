@@ -4,20 +4,44 @@ Explore and manage your data with ease using RedisHub's intuitive data browser.
 
 ## Key Browser
 
-The key browser allows you to search and filter keys using glob patterns (e.g., `user:*`).
+When you connect, the side panel shows the key browser for that connection. Its header shows the connection name, its state dot, the current database and a **READ-ONLY** badge when read-only mode is on. The icons on the right open the **Views** menu, refresh the key list, and create a key (**New Key**).
 
 ### Browsing Keys
-- Select a database index from the dropdown (0-15 by default).
-- Use the search bar to filter keys by name. Supports glob patterns (e.g., `user:*`).
-- Click a key to view its details and value.
-- **Large-Scale Support**: Optimized for databases with 500k+ keys, providing smooth tree rendering and instant search results even on high-load instances.
+- **Database picker**: lists the databases the server reports with their key counts, for example `DB3 (15)`. For the current database it shows loaded and total keys, for example `DB0 (500/12000)`.
+- **Loading**: keys are loaded in batches of the connection's **Key Load Size**. Scrolling to the bottom of the tree loads the next batch; the two buttons next to the database picker load the next batch or keep loading until every key is in.
+- **Tree**: keys are grouped into folders by `:`, and each folder shows how many keys it holds. Click a key to open it in a **Key Detail** tab.
+- **Large-Scale Support**: optimized for databases with 500k+ keys, with a virtualized tree that stays smooth on high-load instances.
+
+### Filtering
+The **Filter** box matches key names that contain the text you type (**Contains**, with **Ignore case** on). The sliders button next to it opens **Filters** for more:
+- **Key type**: **Any type**, or one of `string`, `list`, `set`, `zset`, `hash`, `stream`, `rejson-rl` and `graphdata`.
+- **Clauses**: each clause has a mode - **Contains**, **Glob** (e.g. `user:*`) or **Regex** (e.g. `^user:\d+$`) - and its own **Exclude** and **Ignore case** switches. **Add filter** adds another clause; extra clauses appear as chips under the filter box, where you can remove them.
+- **Match all** / **Match any**: with more than one include clause, choose whether a key must match all of them or any of them.
+- **Saved filters**: type a name in *Save current filter as…* and press **Save** to keep the current clauses, match mode and key type. Click a saved filter to apply it, or its **x** to delete it. Saved filters are shared by all connections.
+
+While a filter runs, the progress line shows how many keys were scanned and matched, and **Stop** cancels the scan.
+
+> **Note:** **Ignore case** stops Redis from pre-filtering, so the whole keyspace is scanned.
+
+Filters, key type and expanded folders are kept per connection and database for the session; see [Working with multiple connections](/docs/user-guide/interface#working-with-multiple-connections).
+
+### Key List
+**Views** > **Key List** opens the keys of the current database as a table with name, type, TTL and size columns. Click a column header to sort by it, and click again to reverse the order. Type, TTL and size are fetched for the rows on screen. The same filter bar as the key browser sits above the table; click a row to open the key, or its trash icon to delete it.
+
+## Key Detail
+
+A **Key Detail** tab opens the key's value under a common header:
+- **Type badge** and the **key name**. Edit the name and click the save icon next to it to rename the key; the **Copy** button copies the name.
+- **TTL**: the remaining time to live, or **No expiry**. Click it to open **Update TTL** and enter seconds; `-1` removes the expiry.
+- **Refresh** reloads the key and **Delete** removes it after a confirmation.
+- Below the header, a strip shows the value's **Length**, its **Memory** footprint (`MEMORY USAGE`) and its internal **Encoding** (`OBJECT ENCODING`).
 
 ## Editing Data
 
 RedisHub supports all major Redis data types:
 
 ### Strings
-View and edit plain string values. Supports different view modes (Text, JSON, Hex).
+View and edit the value in a single text editor, then press **Save**.
 
 ### JSON (RedisJSON)
 Browse and edit RedisJSON documents (`ReJSON-RL`) directly. The document is pretty-printed on open; edit it and press **Save** to write the whole document back. Malformed JSON is rejected before it reaches the server, and the key stays a real JSON document rather than being flattened into a string.
@@ -25,7 +49,7 @@ Browse and edit RedisJSON documents (`ReJSON-RL`) directly. The document is pret
 - **Filter**: pick **rejson-rl** in the key type filter to list only JSON documents.
 - **Requires** a Redis server with the RedisJSON module. Redis 8 ships it in core; on Redis 7 you need `redis-stack`.
 
-- **Not the same as** a plain string whose value happens to be JSON: those stay `string` keys and open in the string editor's JSON view mode.
+- **Not the same as** a plain string whose value happens to be JSON: those stay `string` keys and open in the string editor as text.
 
 ### Graph (RedisGraph / FalkorDB)
 A `graphdata` key opens into a **Cypher console** rather than a value editor, because a graph has no single value to show. Type a query, press **Run** (or `Ctrl+Enter`), and read the answer either way:
@@ -41,7 +65,7 @@ The header shows the graph's node and relationship counts, and the labels and re
 Manage field-value pairs in a tabular format. Add, edit, or delete individual fields.
 
 ### Lists
-View list elements in order. Supports adding elements to the head or tail.
+View list elements in order, and edit or delete individual elements. **Insert Row** adds new elements at the head of the list (`LPUSH`).
 
 ### Sets
 Manage unique members of a set.
@@ -53,7 +77,13 @@ Manage members with their associated scores.
 Browse stream entries with their IDs and field-value pairs.
 
 ## Common Actions
-- **Delete Key**: Remove a key from the database.
-- **Bulk Delete**: Delete multiple keys at once by specifying a prefix. This is much faster than deleting keys individually and is optimized to avoid blocking the Redis server.
-- **Rename Key**: Safely rename keys.
-- **Set TTL**: Set or update the expiration time (Time To Live) for a key.
+- **Delete Key**: hover a key in the tree and choose **...** > **Delete**, or use **Delete** in the Key Detail header.
+- **Bulk Delete**: hover a folder and choose **...** > **Delete** to delete every key under that prefix. A preview lists the matching keys (search it, or use **Load More** / **Load All** to list more), then:
+    - **Delete Preview (n)** deletes only the keys in the preview list.
+    - **Delete Everything** asks once more (**Delete Everything?**) and deletes every key with the prefix, including keys not shown in the preview.
+
+  Keys are found with `SCAN` and deleted in batches of 1000, so the server is not blocked; a notification shows the progress.
+- **Rename Key**: edit the name in the Key Detail header and save.
+- **Set TTL**: click the TTL in the Key Detail header.
+
+In read-only mode the delete, rename and TTL actions are disabled.

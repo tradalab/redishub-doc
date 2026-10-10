@@ -8,8 +8,8 @@ RedisHub uses a `Makefile` to orchestrate common development, testing, and build
 
 | Command | Action |
 |---------|--------|
-| `make dev` | Run the app with the Next.js dev server + HMR (`scorix dev`) — main workflow |
-| `make generate` | Regenerate handlers/types from proto + sqlx models from schema (`scorix generate proto/model`) |
+| `make dev` | Run the app with the Next.js dev server + HMR (`scorix dev`) - main workflow. Sets `SCORIX_LOGGER_LEVEL=debug` and `SCORIX_IPC_TRACE=1` unless already set |
+| `make generate` | Regenerate from `idl/app.proto` (handlers, types, events, frontend client, logic stubs for new rpcs) and sqlx models from `idl/schema.sql` (`scorix generate proto` + `scorix generate model`) |
 | `make deps` | Install all backend and frontend dependencies |
 | `make shell-install` | Install frontend dependencies only |
 | `make doctor` | Check the toolchain & runtime deps (`scorix doctor`) |
@@ -24,15 +24,18 @@ RedisHub uses a `Makefile` to orchestrate common development, testing, and build
 | `make lint` | Run complete linting (Go vet + ESLint) |
 | `make lint-go` | Run Go vet only |
 
+CI runs `scorix build`, `scorix test` and `scorix lint` on every pull request; `make test` and
+`make lint` are the local equivalents.
+
 ---
 
 ## Redis Infrastructure (Docker)
 
 | Command | Action |
 |---------|--------|
-| `make redis-up` | Start all Redis containers (Standalone, Sentinel, Cluster) |
+| `make redis-up` | Start all Redis containers (Standalone, Sentinel, Cluster, FalkorDB) |
 | `make redis-down` | Stop and remove Redis containers |
-| `make redis-init-cluster` | Initialize cluster sharding (One-time only) |
+| `make redis-init-cluster` | Initialize cluster sharding (One-time only; needs a LAN IP, see `RDH_HOST_IP` in [Getting Started](/docs/development/setup)) |
 | `make redis-status` | Show container status |
 | `make redis-logs` | Tail logs of all Redis containers |
 
@@ -43,8 +46,24 @@ RedisHub uses a `Makefile` to orchestrate common development, testing, and build
 | Command | Action |
 |---------|--------|
 | `make build` | Build the single production binary for the host (`scorix build`) |
-| `make package` | Build + wrap into a native installer — msi/dmg/appimage per `scorix.yaml` (`scorix package`) |
+| `make package` | Build + wrap into a native installer - msi/dmg/appimage per `scorix.yaml` (`scorix package`) |
 | `make clean` | Remove build artifacts and dist |
+
+### Releasing (maintainers)
+
+1. Bump the version: `bash scripts/release.sh <version>` rewrites `app.version` in `scorix.yaml` and
+   `version` in `shell/package.json`.
+2. Bump the rest by hand in the same commit: `image.tag` in `deploy/values.yaml`, and the
+   `[Unreleased]` heading in `CHANGELOG.md` becomes `[<version>]`. The commit is `chore: bump v<version>`.
+3. Tag it `v<version>`. The tag must match `app.version` in `scorix.yaml`; the release workflow checks
+   this before building and fails on a mismatch.
+4. The tag has to reach the GitHub mirror: a `v*` tag there triggers `.github/workflows/release.yml`,
+   which calls the reusable `tradalab/scorix` `scorix-release.yml`. It builds the msi/dmg/AppImage
+   matrix from `package.targets`, signs the update artifacts, publishes the GitHub Release and pushes
+   the web image to GHCR.
+
+The GitHub Release is the update channel (`modules.updater.provider: github`): installed apps look for
+updates there, which is why the repository is public.
 
 ---
 

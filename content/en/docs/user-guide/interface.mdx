@@ -1,56 +1,78 @@
 # Interface & Tabs
 
-RedisHub features a modern, tab-based interface designed for high-productivity multitasking. This layout allows you to maintain multiple active connections and switch between different operational contexts without losing your place.
+RedisHub keeps several connections open side by side. The window has three parts: a narrow **left rail**, a **side panel** next to it, and a **tab area** where each tab shows one view of one connection.
 
-## Tab Navigation
+## Left Rail
 
-The tab bar is located at the top of the application and serves as your primary navigation hub.
+From top to bottom, the rail holds:
 
-### Core Tabs
-- **Connections Dashboard**: Your home screen for managing servers, groups, and SSH tunnels.
-- **Key Browser**: Appear when you connect to a database. Each browser tab is tied to a specific connection.
-- **Settings**: Accessible via the sidebar, allowing you to tune the application without closing active browsers.
+- **Connections** (folder-tree icon) - opens the Connections panel, where you add, organize, connect and filter connections. See [Connection Management](/docs/user-guide/connections).
+- **One icon per open connection** - tinted with the connection's color and carrying its state dot (hover for the name and address). A click returns to the tab you last used on that connection and shows its key browser in the side panel. Right-click the icon and choose **Disconnect** to close the connection and all its tabs.
+- **Github**, **Report Issues** and **Documentation** at the bottom open the project pages in your browser.
+- **Settings** (gear icon, last) opens the [Settings dialog](#settings).
 
-## Working with Multiple Connections
+## Tabs
 
-RedisHub is built to handle many active connections simultaneously:
+Every tab belongs to one connection and one database. Opening a view that is already open for the same connection and database switches to the existing tab instead of opening a second one.
 
-1. **Simultaneous Browsing**: You can open multiple browser tabs for different Redis instances (e.g., Development, Staging, and Production).
-2. **Tab Isolation**: Each tab maintains its own database selection, search results, and scroll position.
+| Tab            | How to open it                                                     |
+|----------------|--------------------------------------------------------------------|
+| **General**    | Opens when you connect; also **Views** > **General**                |
+| **Key Detail** | Click a key in the key tree or in the Key List                     |
+| **Key List**   | **Views** > **Key List**                                            |
+| **Console**    | **Views** > **Console**                                             |
+| **Pub/Sub**    | **Views** > **Pub/Sub**                                             |
+| **Monitor**    | **Views** > **Monitor**                                             |
+| **Analysis**   | **Views** > **Analysis**                                            |
+| **Slow Query** | **Views** > **Slow Query**                                          |
 
-## UI Indicators
+The **Views** menu is the panel icon in the key browser header. It also holds the **Read-only** switch for the connection (see [Read-only Mode](/docs/user-guide/connections#read-only-mode)).
 
-- **Active State**: The currently focused tab is highlighted with a coloured bottom border.
-- **Loading Indicators**: Tabs will show a subtle loading spinner when a long-running command (like a deep `SCAN`) is in progress.
-- **Validation Dots**: Indicators appear on tabs when there are connectivity issues or validation errors within that specific context.
+### Tab indicators
+- The tab icon shows the tab type, tinted with the connection's color, with the connection's state dot in its corner (amber connecting, green connected, red unreachable).
+- Under the title, a subtitle names the connection and database, for example `Production (DB0)`.
+- The active tab is highlighted.
 
-## Web Mode Support
+### Working with multiple connections
+- Open as many connections as you need (for example Development, Staging and Production); each gets its own icon in the left rail.
+- The key browser keeps its filters, key type and expanded folders per connection and database, so switching back finds the view as you left it. This is kept in memory for the session and dropped when the connection closes.
 
-Starting with version 1.9.0, RedisHub can be deployed as a central web application. This is ideal for teams that want a shared Redis management console accessible from any browser without installing native clients on every machine.
+### Managing tabs
+- **Close**: click the **x** on a tab.
+- Right-click a tab for more actions:
+    - **Pin Tab** / **Unpin Tab** - pinned tabs move to the left, and **Close Others** and **Close All** leave them open.
+    - **Close Others** - close every other unpinned tab.
+    - **Close All** - close every unpinned tab.
+- In the desktop app, closing the last tab of a connection disconnects it. In web mode the connection stays open, since other people on the server may be using it.
 
-For detailed instructions on how to configure and deploy the web version, please refer to our **[Web Mode Deployment Guide](/docs/user-guide/web-mode)**.
+![Tab Context Menu](/assets/en/tab-context-menu.png)
 
-## Managing Tabs
+## Views
 
-- **Closing Tabs**: Click the **x** icon on a tab to close it. This will safely terminate the UI context for that connection.
-- **Reordering**: Drag and drop tabs to organize your workspace according to your current workflow.
-
-## Specialized Tools
-
-RedisHub includes several specialized tools to help you monitor and debug your Redis instances.
+### Console
+A Redis CLI inside the app, opened from **Views** > **Console**. Each console is tied to one connection and database, and the prompt shows the database (`db0>`).
+- **Suggestions**: as you type a command name, matching commands are listed with a short summary; after the command name, matching key names are suggested. Use the arrow keys to move through the list and `Tab` to accept.
+- **History**: the Up and Down arrows recall earlier commands run on the same connection and database. History is saved in local storage, so it survives restarts; the most recent 1000 commands are kept, and only commands that succeeded are recorded.
+- **Built-in commands**: `CLEAR` clears the screen, `HELP` lists the built-ins, `HISTORY` prints the history for this connection and database.
+- **Dangerous commands**: `FLUSHALL`, `FLUSHDB`, `CONFIG`, `SHUTDOWN` and `SCRIPT` are not run the first time. RedisHub asks you to re-type the exact same command, and it runs only if you do so within 30 seconds. Typing a different command cancels the confirmation.
+- **Read-only mode** applies here too: write commands are refused on a read-only connection.
 
 ### Monitor
-The **Monitor** tool (available via the sidebar) streams every command processed by the Redis server in real-time.
-- **Real-time Visibility**: See exactly what commands are hitting your server.
-- **Filtering**: Filter the stream by keyword to find specific operations.
-- **Caution**: The `MONITOR` command can degrade Redis performance by up to 50% under heavy load. Use with caution in production environments.
+The **Monitor** tab streams every command processed by the Redis server in real time.
+- **Start Monitor** / **Stop Monitor** controls the stream; **Clear** empties it and **Pause Scroll** stops auto-scrolling.
+- **Filtering**: filter the stream by keyword to find specific operations.
+- **Caution**: the `MONITOR` command can degrade Redis performance by up to 50% under heavy load. Use with caution in production environments.
 
-### Command Console (Palette)
-Press `Ctrl+K` (or `Cmd+K`) to open the **Command Palette**. This major upgrade provides a powerful CLI-like experience within the app:
-- **Smart Suggestions**: Real-time auto-complete for all major Redis commands as you type. It includes syntax hints and short summaries for each command.
-- **Safety First (Confirmations)**: Dangerous commands (like `FLUSHALL`, `FLUSHDB`, `SHUTDOWN`) now require explicit confirmation before execution to prevent accidental data loss.
-- **Command Registry**: Access built-in documentation links to Redis.io for every command directly from the palette.
-- **Persistent History**: Your command history is saved across sessions and connections, allowing you to quickly cycle through previous commands using the Up/Down arrow keys.
+### Pub/Sub
+The **Pub/Sub** tab lets you subscribe to Redis channels and patterns, and publish messages.
+- **Message Streaming**: view incoming messages in real time in the **Message Feed**.
+- **Multiple Subscriptions**: subscribe to several channels or patterns (e.g., `events:*`) at once, or use **Subscribe All (\*)**.
+- **Publish**: enter a channel and a message, then press **Publish** (or `Ctrl+Enter`).
+
+### Slow Query
+Identify performance bottlenecks by inspecting the Redis Slow Log.
+- **Execution Time**: see how long each slow command took (**Duration**).
+- **Client Info**: see which client sent it (**Client Addr**).
 
 ### Analysis
 Profile a whole keyspace: how many keys of each type, how their sizes are distributed, how much memory the instance uses, which keys are the largest, and how TTLs are spread.
@@ -66,22 +88,22 @@ Notes on accuracy:
 - The last column shows **Idle** or **Freq** depending on `maxmemory-policy`: `OBJECT IDLETIME` and `OBJECT FREQ` exclude each other, so only the one your policy allows is offered.
 - On a cluster every master is scanned and the totals are combined.
 
-### Pub/Sub
-The **Pub/Sub** tab allows you to subscribe to Redis channels and patterns.
-- **Message Streaming**: View incoming messages in real-time.
-- **Multiple Subscriptions**: Subscribe to multiple channels or patterns (e.g., `events:*`) simultaneously.
+### General and Key List
+The **General** tab shows server information; see [Server Information](/docs/user-guide/connections#server-information). The **Key List** tab shows keys as a sortable table; see [Key Operations](/docs/user-guide/key-operations#key-list).
 
-### Slow Query
-Identify performance bottlenecks by inspecting the Redis Slow Log.
-- **Execution Time**: See exactly how long slow commands took to execute.
-- **Client Info**: Identify which client triggered the slow command.
+## Settings
 
-## Advanced Tab Management
-Maximize your productivity with specialized tab controls:
-- **Pinning**: Right-click a tab and select **Pin Tab**. Pinned tabs are moved to the left and take up less space, keeping your most important connections always visible.
-- **Bulk Closing**: Right-click any tab to access bulk management actions:
-    - **Close Others**: Quickly close all tabs except the currently selected one.
-    - **Close All**: Clear your entire workspace in one action.
+The gear icon at the bottom of the left rail opens the **Settings** dialog. Its **General** panel holds:
+- **Theme**: **System**, **Light** or **Dark**.
+- **Accent**: recolours buttons and focus rings and tints every surface; status colours never change.
+- **Language**: the interface language. The choice is remembered across restarts.
+- **Compact Mode**: reduces spacing so more keys and server information fit on screen.
+- **Automatic Updates**: **Enable automatic update checks** turns the background check on or off.
+- **Check Update**: **Check for updates** looks for a new version now; when one is found, its release notes are shown and **Update now** installs it.
+
+In web mode the two update settings are disabled: the server updates by pulling a new container image.
+
+The **About** panel shows the **Version**, **Platform**, **System language** and **Run mode** (desktop app or web mode).
 
 ## Running in the Background
 
@@ -92,15 +114,8 @@ Closing the window does not quit RedisHub - it hides to the system tray and keep
 
 Available on Windows and Linux. On this path the updater elevates installs on its own, so an update applied from the tray still installs correctly.
 
-## UI Customization
+## Web Mode
 
-### Language
-Switch the interface language from the settings dialog. English, Japanese and Vietnamese are available; the choice is remembered across restarts.
+Starting with version 1.9.0, RedisHub can be deployed as a central web application. This is ideal for teams that want a shared Redis management console accessible from any browser without installing native clients on every machine.
 
-### Compact Mode
-For users who prefer high-density layouts, RedisHub offers a **Compact Mode**.
-- **Increased Density**: Reduces padding and margins across the entire UI.
-- **More Data**: See more keys and server information on the screen at once.
-- **Toggle**: Enable it via the settings icon in the bottom-left corner of the sidebar.
-
-![Tab Context Menu](/assets/en/tab-context-menu.png)
+For detailed instructions on how to configure and deploy the web version, please refer to the **[Web Mode Deployment Guide](/docs/user-guide/web-mode)**.

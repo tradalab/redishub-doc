@@ -4,7 +4,7 @@ RedisHub は集中管理型の Web アプリケーションとしてデプロイ
 
 ## 仕組み
 
-**Web モード**で実行すると、RedisHub は組み込みの HTTP サーバーを起動し、UI を配信するとともにバックエンドで Redis 操作を処理します。すべての接続プロファイルと設定は、サーバー上の集中管理型データベース（`app.dat`）に保存されます。
+**Web モード**で実行すると、RedisHub は組み込みの HTTP サーバーを起動し、UI を配信するとともにバックエンドで Redis 操作を処理します。すべての接続プロファイルと設定はサーバー上の 1 つのデータベース（`app.dat`）に保存されるため、UI を開いた全員が同じ接続を目にします（[データの永続化](#データの永続化)を参照）。
 
 ## 設定
 
@@ -19,6 +19,15 @@ web:
   port: 7100        # the port to serve the UI
 ```
 
+### コマンドラインフラグ
+
+| フラグ                 | 効果                                                                                         |
+|------------------------|----------------------------------------------------------------------------------------------|
+| `--mode web`           | Web モードで実行します（`SCORIX_MODE=web` と同じ）。                                         |
+| `--addr <host:port>`   | 待ち受けアドレス。`web.host` / `web.port` と `SCORIX_WEB_*` 変数より優先されます。            |
+| `--web-token <secret>` | UI と `/ipc` にアクセストークンを要求します。[アクセストークン](#アクセストークン)を参照。     |
+| `--config <file>`      | YAML の[設定オーバーレイ](#設定オーバーレイ)を読み込みます（`SCORIX_CONFIG` と同じ）。        |
+
 ### 環境変数
 
 設定は埋め込まれているため、デプロイ時には環境変数によって実行時にオーバーライドします（再ビルド不要）。これは Docker で推奨される方法です。
@@ -27,15 +36,30 @@ web:
 - `SCORIX_WEB_HOST`: サーバーをバインドする IP アドレス（例: `0.0.0.0`）。
 - `SCORIX_WEB_PORT`: リッスンするポート（デフォルトは `7100`。Docker イメージでは `8080` に固定されています）。
 - `SCORIX_MASTER_KEY`（**Docker/Web では必須**）: 保存された認証情報（Redis/Sentinel のパスワード、SSH 鍵とパスフレーズ、TLS 鍵）を暗号化するために使用する base64 エンコードされた 32 バイトのキーです。デスクトップではこのキーは OS のキーチェーンに保存されますが、コンテナにはキーチェーンがないため、明示的に指定する必要があります。`openssl rand -base64 32` で生成できます。
+- `SCORIX_CONFIG`: YAML の設定オーバーレイのパス（`--config` と同じ）。
+- `SCORIX_MODULE_SQLX_DSN`: データディレクトリ内の既定の `app.dat` 以外を使う場合のデータベースファイルのパス。相対パスはデータディレクトリを基準に解決されます。
+
+アクセストークンには環境変数がなく、`--web-token` でのみ設定します。
 
 > [!IMPORTANT]
 > `SCORIX_MASTER_KEY` は**一度だけ**生成し、起動のたびにまったく同じ値を再利用してください。イメージ内ではなくシークレットマネージャーに保管してください。キーが存在しない場合、サーバーは起動を拒否します。また、後でキーが**変更されたり失われたりすると、保存されているすべての認証情報が永久に復元不能になります**（すべてのパスワードを再入力する必要が生じます）。`app.dat` と一緒にバックアップしてください。
+
+### 設定オーバーレイ
+
+`--config <file>`（または `SCORIX_CONFIG`）は、埋め込みの `scorix.yaml` の上に外部の YAML ファイルを重ねて読み込みます。適用されるのは、`web.host` や `web.port` のように環境変数でも設定できる項目だけです。`security` や更新プログラムの鍵などの封印された項目は破棄され、ログに記録されます。同じ項目が複数の場所で指定された場合、環境変数がオーバーレイファイルより優先され、オーバーレイファイルが埋め込みの設定より優先されます。
+
+```yaml
+# overlay.yaml
+web:
+  host: 0.0.0.0
+  port: 7100
+```
 
 ---
 
 ## Docker でのデプロイ
 
-Docker を使用するのが、RedisHub を Web モードでデプロイする推奨方法です。
+Docker を使用するのが、RedisHub を Web モードでデプロイする推奨方法です。イメージにはすでに `SCORIX_MODE=web`、`SCORIX_WEB_HOST=0.0.0.0`、`SCORIX_WEB_PORT=8080` が設定されています。以下の例のように再度設定しても問題ありません。
 
 ### 1. Docker CLI で実行する
 
@@ -69,7 +93,7 @@ services:
       - SCORIX_WEB_PORT=8080
       # Generate once (`openssl rand -base64 32`) and keep it stable; losing it
       # makes all stored credentials unrecoverable. Provide it via the host env
-      # or a .env file — never bake it into the image.
+      # or a .env file - never bake it into the image.
       - SCORIX_MASTER_KEY=${SCORIX_MASTER_KEY:?set a base64 32-byte key, e.g. `openssl rand -base64 32`}
     volumes:
       - redishub_data:/root/.local/share/RedisHub
@@ -83,10 +107,16 @@ volumes:
 
 ## データの永続化
 
-RedisHub は SQLite データベース（`app.dat`）を使用して、接続、グループ、設定を保存します。
+RedisHub は SQLite データベース（`app.dat`）を使用して、接続、グループ、プロファイル、保存したフィルター、設定を保存します。このファイルは、サーバーを実行するユーザーのデータディレクトリに置かれます。
+
+- **Linux**: `$XDG_DATA_HOME/RedisHub`。`XDG_DATA_HOME` が未設定の場合は `~/.local/share/RedisHub`。
+- **Windows**: `%APPDATA%\RedisHub`。
+- **macOS**: `~/Library/Application Support/RedisHub`。
+
+データベースを別の場所に置くには `SCORIX_MODULE_SQLX_DSN` を設定します。
 
 > [!IMPORTANT]
-> 公式の Docker イメージでは、データは `/root/.local/share/RedisHub` に保存されます。コンテナの再起動後もデータが確実に永続化されるよう、このパスにボリュームをマウントする**必要があります**。
+> 公式の Docker イメージは `root` で実行されるため、データは `/root/.local/share/RedisHub` に保存されます。コンテナの再起動後もデータが確実に永続化されるよう、このパスにボリュームをマウントする**必要があります**。
 
 ---
 
@@ -129,15 +159,75 @@ example.com {
 
 ## セキュリティに関する推奨事項
 
+### アクセストークン
+トークンがない場合、ポートに到達できる人は誰でも、保存されたすべての接続に完全にアクセスできます。`--web-token <secret>` を付けてサーバーを起動すると、UI と `/ipc` WebSocket の両方でトークンが必要になります。リクエストは、次のいずれかの方法でトークンを含んでいれば受け付けられます。
+
+- **ブラウザー**: 一度だけ `https://your-host/?token=<secret>` を開きます。サーバーは HttpOnly のセッション Cookie（`scorix_token`。HTTPS 経由、または `X-Forwarded-Proto: https` 付きのリクエストでは `Secure` 付き）を返すため、以降のリクエストはクエリ文字列なしでトークンを送ります。
+- **ヘッダー**: `Authorization: Bearer <secret>`。
+
+サーバーがトークンなしで非ループバックアドレス（`0.0.0.0` など）にバインドされると、すべてのネットワーククライアントが信頼される旨の警告がログに出ます。
+
+トークンには環境変数がありません。Docker イメージは `CMD ["/app/redishub"]` で起動し ENTRYPOINT を持たないため、コマンドを上書きしてフラグを渡します。
+
+```bash
+docker run -d \
+  --name redishub \
+  -p 8080:8080 \
+  -v redishub_data:/root/.local/share/RedisHub \
+  -e SCORIX_MASTER_KEY="$SCORIX_MASTER_KEY" \
+  ghcr.io/tradalab/redishub:latest \
+  /app/redishub --web-token "$REDISHUB_WEB_TOKEN"
+```
+
+Docker Compose では、同じコマンドをサービスに追加します。
+
+```yaml
+    command: ["/app/redishub", "--web-token", "${REDISHUB_WEB_TOKEN:?set an access token}"]
+```
+
 ### ネットワークの分離
-可能であれば、RedisHub は内部ネットワークまたは VPN で保護された VPC 内にデプロイしてください。追加のセキュリティレイヤーなしで、Web UI を公衆インターネットに直接公開することは避けてください。
+可能であれば、RedisHub は内部ネットワークまたは VPN で保護された VPC 内にデプロイしてください。追加のセキュリティレイヤーなしで Web UI を公衆インターネットに直接公開することは避け、トークンが平文で送られないよう HTTPS で配信してください（例: 上記のリバースプロキシ経由）。
 
 ---
 
-## 手動デプロイ
+## Web モードでの動作
 
-Linux サーバー上でバイナリを直接実行する場合は、次の手順に従います。
+- **更新**: アプリ内の更新はオフです。**Automatic Updates** と **Check Update** の設定は無効になります。サーバーは新しいイメージを取得して更新してください。
+- **共有される接続**: 接続はサーバー上で開かれ、利用者全員で共有されます。ある利用者が接続の最後のタブを閉じても、ほかの利用者のために接続は維持されます。**Disconnect**（接続の **...** メニューまたは左レールのアイコンから）でサーバー上の接続を閉じます。
 
-1. [Releases](https://github.com/tradalab/redishub/releases) ページから最新の Linux バイナリをダウンロードします。
-2. バイナリを実行するユーザーが、アプリケーションディレクトリへの書き込み権限（`app.dat` 用）を持っていることを確認します。
-3. Web モードで実行します（設定は埋め込まれているため、外部ファイルは不要です）: `SCORIX_MODE=web SCORIX_WEB_HOST=0.0.0.0 ./redishub`（または `./redishub --mode web`）。
+---
+
+## ソースからのビルド
+
+サーバー用バイナリは Releases ページでは公開されていません。Releases にはデスクトップ用インストーラー（`.msi`、`.dmg`、`.AppImage`）が置かれています。公式イメージを使わずに Web モードを実行するには、[ソース](https://github.com/tradalab/redishub)からビルドします。
+
+### 独自のイメージ
+
+リポジトリのルートで次を実行します。
+
+```bash
+docker build -f docker/Dockerfile_web -t redishub-web .
+```
+
+できたイメージは公式イメージとまったく同じように動作します。
+
+### 単体のバイナリ
+
+`docker/Dockerfile_web` と同じ手順です。Go 1.27、Node.js 24、pnpm、C コンパイラー（ビルドに CGO を使用）が必要です。
+
+```bash
+git clone https://github.com/tradalab/redishub.git
+cd redishub
+
+# 1. Build the UI; the output goes to shell/dist
+(cd shell && pnpm install --frozen-lockfile && pnpm run build)
+
+# 2. Embed the UI and build the server binary
+rm -rf .scorix/dist && mkdir -p .scorix && cp -r shell/dist .scorix/dist
+CGO_ENABLED=1 go build -tags server -ldflags "-s -w" -o redishub .
+
+# 3. Run it in web mode
+SCORIX_MASTER_KEY="$SCORIX_MASTER_KEY" ./redishub --mode web --addr 0.0.0.0:7100 --web-token "$REDISHUB_WEB_TOKEN"
+```
+
+バイナリを実行するユーザーには、[データディレクトリ](#データの永続化)への書き込み権限が必要です。`app.dat` は初回起動時にそこに作成されます。

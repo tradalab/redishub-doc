@@ -19,7 +19,7 @@ RedisHub の開発・セットアップ・ビルドでよくある問題とそ�
 **解決方法**:
 1.  ターミナルのログを確認し、隠れたエラーがないか調べます。
 2.  **Windows**: [WebView2 Evergreen Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) がインストールされていることを確認します（Windows 11 / 最近の Windows 10 にはプリインストール済み）。
-3.  **Linux**: GTK/WebKit ランタイムをインストールします — `sudo apt-get install -y libgtk-3-0 libwebkit2gtk-4.1-0`。
+3.  **Linux**: GTK/WebKit ランタイムをインストールします: `sudo apt-get install -y libgtk-3-0 libwebkit2gtk-4.1-0`。
 4.  `make doctor`（`scorix doctor`）を実行して、ツールチェーンとランタイム依存関係を検証します。
 5.  `scorix.yaml` でデバッグモードを有効にして、DevTools を自動的に開きます:
     ```yaml
@@ -35,6 +35,10 @@ RedisHub の開発・セットアップ・ビルドでよくある問題とそ�
 **解決方法**:
 1.  `make redis-up` を実行済みであることを確認します。
 2.  `make redis-init-cluster` を実行します。Redis クラスターは、接続を受け付ける前に、シャーディングスロットの一度きりの初期化が必要です。
+3.  ノードがアナウンスする IP を確認します。クラスターノードはクライアントを `RDH_HOST_IP` へリダイレクトします。これは `127.0.0.1` ではなく、
+    コンテナと RedisHub の両方から到達できる LAN IP である必要があります（`make redis-init-cluster` はループバックを拒否します）。
+    検出が誤ったアダプター（VPN など）を拾った場合は、`make redis-up` と `make redis-init-cluster` の両方で `RDH_HOST_IP` を
+    自分で指定してください。[はじめに](/ja/docs/development/setup) を参照。
 
 ---
 
@@ -42,6 +46,8 @@ RedisHub の開発・セットアップ・ビルドでよくある問題とそ�
 **症状**: `make dev` または `make redis-up` が「address already in use」で失敗します。
 
 **解決方法**:
-1.  競合しているポートを特定します（例: web サーバーの `7100` や Redis の `6379`）。
-2.  `dev/docker-compose-*.yaml` または `scorix.yaml`（`web.port`）でポートマッピングを編集します。
+1.  競合しているポートを特定します: `make dev` が起動する Next.js 開発サーバーの `7101`（`dev.port`）、
+    Web モードの `7100`（`web.port`）、またはローカルの Redis ポート（`6001`、`6002`、`7001-7003` とそのバスポート `17001-17003`、
+    `8001`、`8002`、`9001`）。
+2.  `dev/docker-compose-*.yaml` のポートマッピング、または `scorix.yaml` の `dev.port` / `web.port` を編集します。
 3.  RedisHub の UI で接続設定を新しいポートに合わせて更新します。

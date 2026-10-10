@@ -15,10 +15,13 @@ RedisHub is built on three foundational pillars:
 RedisHub provides a comprehensive suite of tools for modern database management:
 
 - **Enterprise Connectivity**: Native support for **Standalone**, **Cluster**, and **Sentinel** architectures.
-- **Hybrid Deployment**: Use it as a native desktop client or deploy it via Docker as a shared web service for your entire team.
+- **Hybrid Deployment**: Use it as a native desktop client or deploy it via Docker as a shared [web service](/docs/user-guide/web-mode) for your entire team, optionally protected by an access token.
 - **Advanced Security**: Integrated **SSH Tunneling**, **TLS/mTLS**, and **Proxy (HTTP/SOCKS5)** support.
-- **High-Performance Browser**: Efficiently search, filter, and manage millions of keys with glob and prefix patterns.
-- **Full Data Type Orchestration**: Seamlessly manage Strings, Hashes, Lists, Sets, Sorted Sets (ZSets), and Streams.
+- **High-Performance Browser**: Efficiently search, filter, and manage millions of keys with substring, glob and regex filters, several at once, with saved filter presets.
+- **Full Data Type Orchestration**: Seamlessly manage Strings, Hashes, Lists, Sets, Sorted Sets (ZSets), Streams, **RedisJSON** documents and **Graphs** (RedisGraph / FalkorDB, queried with Cypher).
+- **Built-in Tools**: a Redis console with suggestions and history, Monitor, Pub/Sub, Slow Query, and **Analysis** for keyspace and memory profiling.
+- **Safe by Design**: per-connection **Read-only Mode**, enforced on the server side, for exploring production data.
+- **Organized Workspace**: live connection state, colors, groups and tags, with tabs per connection and database.
 - **Modern Tech Stack**: Built on the **Scorix Framework**, utilizing Go for high-performance system integration and React for a fluid UI.
 
 Navigate through the [User Guide](/docs/user-guide/connections) to start managing your Redis instances professionally.

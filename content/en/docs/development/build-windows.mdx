@@ -1,13 +1,19 @@
 # Building for Windows
 
-Windows artifacts (`.msi`) are built natively with the `scorix` CLI — no Docker required. The MSI
+Windows artifacts (`.msi`) are built natively with the `scorix` CLI - no Docker required. The MSI
 step needs the WiX Toolset.
 
 ## Prerequisites
 
-- **Go 1.26+** and **Node.js 22+** + **pnpm**
-- **WiX Toolset v6** — `dotnet tool install --global wix --version 6.0.2`
-- **scorix CLI** — install the version pinned in `go.mod`, not `@latest`; see
+- **Go 1.27**, **Node.js 24** and **pnpm 11.22.0** - see [Getting Started](/docs/development/setup)
+- **WiX Toolset v7** with its EULA accepted and the UI/Util extensions installed (this is what CI does):
+  ```bash
+  dotnet tool install --global wix --version 7.0.0
+  wix eula accept wix7
+  wix extension add -g WixToolset.UI.wixext/7.0.0
+  wix extension add -g WixToolset.Util.wixext/7.0.0
+  ```
+- **scorix CLI** - install the version pinned in `go.mod`, not `@latest`; see
   [Getting Started](/docs/development/setup)
 
 ## Build Process
@@ -15,7 +21,7 @@ step needs the WiX Toolset.
 From the project root:
 
 ```bash
-make package          # scorix package — builds the binary + wraps it into an MSI
+make package          # scorix package - builds the binary + wraps it into an MSI
 ```
 
 Or invoke `scorix` directly to target an explicit OS/arch (this is what CI runs):
@@ -24,13 +30,15 @@ Or invoke `scorix` directly to target an explicit OS/arch (this is what CI runs)
 scorix package -d . --os windows --arch amd64
 ```
 
-Code signing is applied automatically when the signing secrets from `scorix.yaml`
-(`sign.windows`) are present in the environment; otherwise an unsigned MSI is produced.
+`scorix package` calls `wix build` itself, so the EULA and the extensions must be in place before
+you run it. Releases ship unsigned on purpose: signing is turned off in `scorix.yaml`
+(`sign.windows.enabled: false`), so the MSI is unsigned and SmartScreen warns on first run.
 
 ## Output Locations
 
 - `artifacts/RedisHub-<version>-windows-amd64.msi` (version tracks `app.version` in `scorix.yaml`)
 
 > [!NOTE]
-> CI runs the same `scorix package` step on a native `windows-2022` runner — see
-> `.github/workflows/release-windows.yml`.
+> CI runs the same `scorix package` step on a native `windows-2022` runner. `.github/workflows/release.yml`
+> calls the reusable `scorix-release.yml` from `tradalab/scorix`, which builds every target in
+> `scorix.yaml` as one matrix when a `v*` tag is pushed.

@@ -1,25 +1,28 @@
-# Roadmap
+# ロードマップ
 
-Our vision for RedisHub is to build the ultimate command center for the Redis ecosystem. Here is our strategic development map.
+RedisHub のビジョンは、Redis エコシステムのための究極のコマンドセンターを作ることです。以下が開発の戦略マップです。
 
-## (In Progress)
-- [x] **Performance Engine**: Optimized scanning and rendering for databases exceeding 500k+ keys.
-- [x] **Redis Hub Web**: A lightweight, cloud-ready web interface for browser-based access.
-- [x] **Monitoring & Statistics**: Real-time server info refresh and MONITOR tool (v1.11.0).
-- [x] **Advanced Filtering**: Support for complex Regex and multi-pattern search in the key browser (v1.15.0).
-- [x] **Module Support**: Browse and edit RedisJSON documents, and query graphs with Cypher on RedisGraph / FalkorDB (v1.15.0).
-- [ ] **Data Export/Import**: Export keys and results to JSON, CSV, and Msgpack.
+## リリース済み
+- [x] **Performance Engine**: 50 万件以上のキーを持つデータベース向けに、走査と描画を最適化。
+- [x] **Redis Hub Web**: ブラウザーからアクセスできる、軽量でクラウド対応の Web インターフェース（v1.9.0）。
+- [x] **Monitoring & Statistics**: サーバー情報のリアルタイム更新と MONITOR ツール（v1.11.0）。
+- [x] **Read-only Mode**: 接続ごとに、すべての書き込みコマンドをサーバー側で強制的にブロック（v1.13.0）。
+- [x] **Advanced Filtering**: 部分一致・glob・正規表現のパターンを複数組み合わせ、フィルターのプリセットを保存（v1.15.0）。
+- [x] **Module Support**: RedisJSON ドキュメントの閲覧・編集と、RedisGraph / FalkorDB での Cypher によるグラフクエリ（v1.15.0）。
+- [x] **Keyspace Analysis**: メモリの概要、型ごとのキー数、サイズ分布、最大のキー、TTL の分布（v1.15.0）。
+- [x] **Connection Awareness**: 接続のライブ状態、接続とグループの色（v1.16.0）、タグ、ホストとタグによる絞り込み、左レールの接続ごとのアイコン（v1.17.0）。
 
-## (Planned)
-- [ ] **Visual Memory Profiler**: Deep analysis of memory usage per key/prefix with tree-map visualization.
-- [ ] **Enhanced Lua Suite**: Professional editor with syntax highlighting, debugging, and script library management.
-- [ ] **Visual Query Builder**: Create complex Redis queries via an intuitive drag-and-drop interface.
+## 計画中
+- [ ] **Data Export/Import**: キーと結果を JSON、CSV、Msgpack にエクスポート。
+- [ ] **Visual Memory Profiler**: メモリの概要、サイズ分布、最大のキー、TTL の分布は Keyspace Analysis ですでに対応済みです。残っているのは、キーのプレフィックスごとのメモリ使用量とツリーマップによる可視化です。
+- [ ] **Enhanced Lua Suite**: シンタックスハイライト、デバッグ、スクリプトライブラリ管理を備えた本格的なエディター。
+- [ ] **Visual Query Builder**: 直感的なドラッグ＆ドロップで複雑な Redis クエリを作成。
 
-## (Future Vision)
-- [ ] **Collaboration Suite**: Share connection profiles and analysis snippets securely with your team.
-- [ ] **Data Transformation Engine**: Built-in tools for seamless data migration and format conversion (JSON, CSV, Protobuf).
-- [ ] **Plugin Ecosystem**: Open API for community-driven extensions and custom themes.
-- [ ] **Multi-Topology Automation**: Automated failover testing and cluster rebalancing triggers.
+## 将来のビジョン
+- [ ] **Collaboration Suite**: 接続プロファイルや分析結果をチームと安全に共有。
+- [ ] **Data Transformation Engine**: データ移行とフォーマット変換（JSON、CSV、Protobuf）のための組み込みツール。
+- [ ] **Plugin Ecosystem**: コミュニティによる拡張やカスタムテーマのためのオープン API。
+- [ ] **Multi-Topology Automation**: フェイルオーバーテストの自動化とクラスターのリバランスのトリガー。
 
 ---
-*Note: This roadmap is driven by the community. Features are prioritized based on user feedback and technical impact.*
+*注: このロードマップはコミュニティ主導です。機能の優先順位は、ユーザーのフィードバックと技術的な影響に基づいて決まります。*

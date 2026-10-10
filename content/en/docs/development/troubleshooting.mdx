@@ -7,7 +7,7 @@ Common development, setup, and build issues for RedisHub, with solutions.
 ## `//go:embed all:.scorix/dist` Fails at Build Time
 **Symptom**: A bare `go build` / `go run` fails with an error about missing files in `.scorix/dist/`.
 
-**Solution**: Build through the `scorix` CLI — `make dev` (or `make build`) compiles the Next.js frontend
+**Solution**: Build through the `scorix` CLI: `make dev` (or `make build`) compiles the Next.js frontend
 into `.scorix/dist` before the Go build. For `make test` / `make lint`, the Makefile builds the shell
 once automatically (see the `_ensure-embed` target), so you don't need to do it by hand.
 
@@ -19,7 +19,7 @@ once automatically (see the `_ensure-embed` target), so you don't need to do it 
 **Solution**:
 1.  Check the logs in your terminal for any hidden errors.
 2.  **Windows**: make sure the [WebView2 Evergreen Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) is installed (preinstalled on Windows 11 / recent Windows 10).
-3.  **Linux**: install the GTK/WebKit runtime — `sudo apt-get install -y libgtk-3-0 libwebkit2gtk-4.1-0`.
+3.  **Linux**: install the GTK/WebKit runtime: `sudo apt-get install -y libgtk-3-0 libwebkit2gtk-4.1-0`.
 4.  Run `make doctor` (`scorix doctor`) to validate the toolchain and runtime dependencies.
 5.  Enable debug mode in `scorix.yaml` to open DevTools automatically:
     ```yaml
@@ -35,6 +35,10 @@ once automatically (see the `_ensure-embed` target), so you don't need to do it 
 **Solution**:
 1.  Ensure you have run `make redis-up`.
 2.  Run `make redis-init-cluster`. The Redis cluster requires a one-time initialization of its sharding slots before it can accept connections.
+3.  Check the IP the nodes announce. Cluster nodes redirect clients to `RDH_HOST_IP`, which must be a LAN IP
+    the containers and RedisHub can both reach, not `127.0.0.1` (`make redis-init-cluster` refuses loopback).
+    If detection picked the wrong adapter (a VPN, for example), set `RDH_HOST_IP` yourself for both
+    `make redis-up` and `make redis-init-cluster`; see [Getting Started](/docs/development/setup).
 
 ---
 
@@ -42,6 +46,8 @@ once automatically (see the `_ensure-embed` target), so you don't need to do it 
 **Symptom**: `make dev` or `make redis-up` fails with "address already in use".
 
 **Solution**:
-1.  Identify the conflicting port (e.g., `7100` for the web server or `6379` for Redis).
-2.  Edit the port mappings in `dev/docker-compose-*.yaml` or `scorix.yaml` (`web.port`).
+1.  Identify the conflicting port: `7101` for the Next.js dev server that `make dev` starts (`dev.port`),
+    `7100` for web mode (`web.port`), or one of the local Redis ports (`6001`, `6002`, `7001-7003` and their bus ports `17001-17003`,
+    `8001`, `8002`, `9001`).
+2.  Edit the port mappings in `dev/docker-compose-*.yaml`, or `dev.port` / `web.port` in `scorix.yaml`.
 3.  Update the connection settings in the RedisHub UI to match the new ports.

@@ -8,8 +8,8 @@ RedisHub では、一般的な開発・テスト・ビルドのタスクを `Mak
 
 | コマンド | 動作 |
 |---------|--------|
-| `make dev` | Next.js 開発サーバー + HMR（`scorix dev`）でアプリを実行 — メインのワークフロー |
-| `make generate` | proto からハンドラー/型を、schema から sqlx モデルを再生成（`scorix generate proto/model`） |
+| `make dev` | Next.js 開発サーバー + HMR（`scorix dev`）でアプリを実行 - メインのワークフロー。未設定なら `SCORIX_LOGGER_LEVEL=debug` と `SCORIX_IPC_TRACE=1` を設定 |
+| `make generate` | `idl/app.proto` から（ハンドラー、型、イベント、フロントエンドクライアント、新しい rpc のロジックスタブ）、`idl/schema.sql` から sqlx モデルを再生成（`scorix generate proto` + `scorix generate model`） |
 | `make deps` | バックエンドとフロントエンドのすべての依存関係をインストール |
 | `make shell-install` | フロントエンドの依存関係のみをインストール |
 | `make doctor` | ツールチェーンとランタイム依存関係をチェック（`scorix doctor`） |
@@ -24,15 +24,18 @@ RedisHub では、一般的な開発・テスト・ビルドのタスクを `Mak
 | `make lint` | 完全なリンティングを実行（Go vet + ESLint） |
 | `make lint-go` | Go vet のみを実行 |
 
+CI はすべてのプルリクエストで `scorix build`、`scorix test`、`scorix lint` を実行します。`make test` と
+`make lint` はそのローカル版です。
+
 ---
 
 ## Redis インフラストラクチャ（Docker）
 
 | コマンド | 動作 |
 |---------|--------|
-| `make redis-up` | すべての Redis コンテナ（Standalone、Sentinel、Cluster）を起動 |
+| `make redis-up` | すべての Redis コンテナ（Standalone、Sentinel、Cluster、FalkorDB）を起動 |
 | `make redis-down` | Redis コンテナを停止して削除 |
-| `make redis-init-cluster` | クラスターのシャーディングを初期化（初回のみ） |
+| `make redis-init-cluster` | クラスターのシャーディングを初期化（初回のみ。LAN IP が必要です。[はじめに](/ja/docs/development/setup) の `RDH_HOST_IP` を参照） |
 | `make redis-status` | コンテナのステータスを表示 |
 | `make redis-logs` | すべての Redis コンテナのログを追跡 |
 
@@ -43,8 +46,23 @@ RedisHub では、一般的な開発・テスト・ビルドのタスクを `Mak
 | コマンド | 動作 |
 |---------|--------|
 | `make build` | ホスト向けの単一の本番バイナリをビルド（`scorix build`） |
-| `make package` | ビルド + ネイティブインストーラーへのラップ — `scorix.yaml` に従い msi/dmg/appimage を生成（`scorix package`） |
+| `make package` | ビルド + ネイティブインストーラーへのラップ - `scorix.yaml` に従い msi/dmg/appimage を生成（`scorix package`） |
 | `make clean` | ビルド成果物と dist を削除 |
+
+### リリース（メンテナー向け）
+
+1. バージョンを上げます: `bash scripts/release.sh <version>` が `scorix.yaml` の `app.version` と
+   `shell/package.json` の `version` を書き換えます。
+2. 残りは同じコミットで手作業で上げます: `deploy/values.yaml` の `image.tag` と、`CHANGELOG.md` の
+   `[Unreleased]` 見出しを `[<version>]` にします。コミットは `chore: bump v<version>` です。
+3. `v<version>` のタグを付けます。タグは `scorix.yaml` の `app.version` と一致している必要があります。リリースワークフローは
+   ビルド前にこれを確認し、一致しなければ失敗します。
+4. タグは GitHub ミラーに届く必要があります: ミラー上の `v*` タグが `.github/workflows/release.yml` をトリガーし、
+   それが再利用可能な `tradalab/scorix` の `scorix-release.yml` を呼び出します。`package.targets` から msi/dmg/AppImage の
+   マトリックスをビルドし、アップデート用の成果物に署名し、GitHub Release を公開し、Web イメージを GHCR にプッシュします。
+
+GitHub Release がアップデートチャネルです（`modules.updater.provider: github`）。インストール済みのアプリはそこで
+アップデートを探します。リポジトリが公開されているのはそのためです。
 
 ---
 

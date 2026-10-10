@@ -4,16 +4,18 @@ macOS builds are performed natively on a Mac. We create a **Universal Binary** t
 
 ## Prerequisites
 
-- **Go 1.26+**
-- **Node.js 22+** + **pnpm**
-- **Xcode Command Line Tools**: `xcode-select --install` — provides `lipo` for merging the universal binary.
+- **Go 1.27**
+- **Node.js 24** + **pnpm 11.22.0**
+- **Xcode Command Line Tools**: `xcode-select --install` - provides `lipo` for merging the universal binary.
+- **scorix CLI** - install the version pinned in `go.mod`, not `@latest`; see
+  [Getting Started](/docs/development/setup)
 
 > [!NOTE]
 > The universal `.dmg` must be built on a Mac (it uses `lipo` from the Xcode Command Line Tools).
 
 ## Build Process
 
-Run `make package` (`scorix package`) on a Mac — it builds the universal binary and packages the
+Run `make package` (`scorix package`) on a Mac - it builds the universal binary and packages the
 `.dmg` per the `darwin/universal` target in `scorix.yaml`:
 
 ```bash
@@ -26,6 +28,9 @@ Under the hood it:
 3. Uses `lipo` to merge them into a single universal binary.
 4. Bundles it into an `.app` and packages the `.app` into a `.dmg`.
 
+The `.app` is not signed or notarized: signing is turned off on purpose in `scorix.yaml`
+(`sign.macos.enabled: false`, `notarize: false`), so Gatekeeper warns on first launch.
+
 ## Output Locations
 
 Upon a successful build, the following file will be available:
@@ -33,3 +38,8 @@ Upon a successful build, the following file will be available:
 - `artifacts/RedisHub-<version>-macos-universal.dmg` (version tracks `app.version` in `scorix.yaml`)
 
 This DMG can be mounted and dragged into the Applications folder for installation.
+
+> [!NOTE]
+> CI runs the same `scorix package` step on a native `macos-14` runner. `.github/workflows/release.yml`
+> calls the reusable `scorix-release.yml` from `tradalab/scorix`, which builds every target in
+> `scorix.yaml` as one matrix when a `v*` tag is pushed.

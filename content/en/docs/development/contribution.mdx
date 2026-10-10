@@ -5,31 +5,37 @@ Thank you for your interest in contributing to RedisHub! We welcome contribution
 ## Where the Code Lives
 
 The GitHub repository is a **read-only mirror**. Development happens in a private upstream
-repository, and every sync force-updates the mirror — so a branch or a Pull Request pushed to
-GitHub cannot be merged, and gets overwritten on the next sync.
+repository, and every push upstream force-updates the mirror. Pull requests still work as usual;
+two things are different:
 
-- **Maintainers** work upstream: they branch off `main` there and land changes through review.
-- **Everyone else**: open a [GitHub Issue](https://github.com/tradalab/redishub/issues) describing
-  the change — a patch or a link to your fork is very welcome — and a maintainer lands it upstream.
+- **Your pull request is not merged with the green button.** A maintainer lands your commits
+  upstream and the mirror carries them back, at which point GitHub marks your PR as merged, with you
+  as the author.
+- **Do not push a branch to the GitHub repository**, even if you have write access: the next sync
+  deletes it. Work on a fork.
 
 > [!NOTE]
 > The repository's [`CONTRIBUTING.md`](https://github.com/tradalab/redishub/blob/main/CONTRIBUTING.md)
-> says the same thing. That is the copy GitHub puts in front of you when you open a pull request,
-> and the one kept current.
+> says the same thing. That is the copy GitHub puts in front of you when you open a pull request.
+
+A typo fix or a small bug fix needs no issue first. For anything larger (a new feature, a new
+dependency, a change to the IPC contract), open a [GitHub Issue](https://github.com/tradalab/redishub/issues)
+and get agreement before you write the code.
 
 ## Contribution Workflow
 
-1. **Clone**: `git clone https://github.com/tradalab/redishub.git` (the mirror is public and always
-   current).
+1. **Fork**: fork `tradalab/redishub` on GitHub and clone your fork.
 2. **Branching**: Create a feature branch off of `main`.
 3. **Coding Standards**:
     - **Go**: Follow `gofmt` and standard Go idioms.
     - **Frontend**: Use Tailwind CSS for styling and TypeScript for typed props.
-    - **IPC**: Edit `proto/app.proto` and run `make generate` — never hand-edit the generated `handler.go` / `types.go` / `shell/api/index.ts`.
+    - **IPC**: Edit `idl/app.proto` and run `make generate` - never hand-edit the generated `internal/handler` / `internal/types` / `shell/api/index.ts`. See [Adding IPC Commands](/docs/development/extending).
 4. **Testing**:
     - Ensure your changes run correctly in development mode using `make dev`.
-    - Run `make lint` and `make test` before submitting your change.
-5. **Commit Messages**: Use descriptive commit messages following the [Conventional Commits](https://www.conventionalcommits.org/) format: `<type>(<scope>): <description>`.
+    - Run `make lint` and `make test` before opening the PR. CI runs `scorix build`, `scorix test`
+      and `scorix lint` on the PR; `make test` and `make lint` are the local equivalents.
+5. **Commit Messages**: one short line in the form `<type>: <short description>`, with no body
+   (e.g. `fix: the graph survives a resize`).
     - `feat:`: New feature.
     - `fix:`: Bug fix.
     - `docs:`: Documentation changes.
@@ -38,14 +44,11 @@ GitHub cannot be merged, and gets overwritten on the next sync.
 
 ## Review Process
 
-1. Maintainers open a review request upstream targeting the `main` branch; contributions arriving
-   through an Issue are landed the same way.
-2. Provide a clear description of the problem solved or the feature added.
-3. Link to any relevant issues or discussions.
-4. Once the code is reviewed and approved, a maintainer merges it — and the GitHub mirror follows
-   within a few minutes.
+1. Push the branch to your fork and open a pull request against `main`.
+2. Provide a clear description of the problem solved or the feature added, and link any relevant issues.
+3. CI runs on the PR, and review happens in the PR. Push follow-up commits to your branch as usual.
+4. On approval a maintainer lands it upstream; the mirror follows and the PR shows as merged.
 
 ## Communication
 
 If you have questions about the project or want to discuss a new feature, feel free to open a **GitHub Issue** or start a **Discussion**.
-

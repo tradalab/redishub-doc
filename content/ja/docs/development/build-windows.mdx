@@ -5,17 +5,23 @@ Windows 用の成果物（`.msi`）は `scorix` CLI を使ってネイティブ�
 
 ## 前提条件
 
-- **Go 1.26+** と **Node.js 22+** + **pnpm**
-- **WiX Toolset v6** — `dotnet tool install --global wix --version 6.0.2`
-- **scorix CLI** — `@latest` ではなく `go.mod` にピン留めされたバージョンをインストールしてください。
-  [はじめに](/docs/development/setup) を参照。
+- **Go 1.27**、**Node.js 24**、**pnpm 11.22.0** - [はじめに](/ja/docs/development/setup) を参照。
+- **WiX Toolset v7** - EULA に同意し、UI/Util 拡張機能をインストールしておきます（CI と同じ手順です）:
+  ```bash
+  dotnet tool install --global wix --version 7.0.0
+  wix eula accept wix7
+  wix extension add -g WixToolset.UI.wixext/7.0.0
+  wix extension add -g WixToolset.Util.wixext/7.0.0
+  ```
+- **scorix CLI** - `@latest` ではなく `go.mod` にピン留めされたバージョンをインストールしてください。
+  [はじめに](/ja/docs/development/setup) を参照。
 
 ## ビルドの手順
 
 プロジェクトのルートから実行します。
 
 ```bash
-make package          # scorix package — builds the binary + wraps it into an MSI
+make package          # scorix package - builds the binary + wraps it into an MSI
 ```
 
 または、OS/アーキテクチャを明示的に指定するために `scorix` を直接呼び出します（CI ではこれを実行しています）。
@@ -24,12 +30,15 @@ make package          # scorix package — builds the binary + wraps it into an 
 scorix package -d . --os windows --arch amd64
 ```
 
-`scorix.yaml` の署名用シークレット（`sign.windows`）が環境に存在する場合、コード署名が自動的に適用されます。存在しない場合は、署名されていない MSI が生成されます。
+`scorix package` は `wix build` を自身で呼び出すため、実行前に EULA への同意と拡張機能のインストールを済ませておく必要があります。
+リリースは意図的に署名なしで配布されます。`scorix.yaml` で署名が無効化されている（`sign.windows.enabled: false`）ため、
+MSI は署名されず、初回実行時に SmartScreen が警告を表示します。
 
 ## 出力先
 
 - `artifacts/RedisHub-<version>-windows-amd64.msi`（バージョンは `scorix.yaml` の `app.version` に追従します）
 
 > [!NOTE]
-> CI は、ネイティブの `windows-2022` ランナー上で同じ `scorix package` ステップを実行します。詳しくは
-> `.github/workflows/release-windows.yml` を参照してください。
+> CI は、ネイティブの `windows-2022` ランナー上で同じ `scorix package` ステップを実行します。`.github/workflows/release.yml`
+> が `tradalab/scorix` の再利用可能な `scorix-release.yml` を呼び出し、`v*` タグがプッシュされると `scorix.yaml` の
+> すべてのターゲットを 1 つのマトリックスとしてビルドします。

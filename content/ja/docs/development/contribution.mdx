@@ -5,29 +5,36 @@ RedisHub へのコントリビューションに関心をお寄せいただき�
 ## コードの所在
 
 GitHub のリポジトリは**読み取り専用のミラー**です。開発はプライベートなアップストリームリポジトリで
-行われ、同期のたびにミラーは強制的に上書きされます。そのため GitHub に push したブランチや
-プルリクエストはマージできず、次の同期で消えてしまいます。
+行われ、アップストリームへの push のたびにミラーは強制的に上書きされます。プルリクエストは通常どおり使えますが、
+2 つの点が異なります。
 
-- **メンテナー**はアップストリームで作業します。`main` からブランチを切り、レビューを経て取り込みます。
-- **それ以外の方**は [GitHub Issue](https://github.com/tradalab/redishub/issues) に変更内容を書いて
-  ください（パッチや fork へのリンクも歓迎します）。メンテナーがアップストリームに取り込みます。
+- **プルリクエストは緑のボタンではマージされません。** メンテナーがあなたのコミットをアップストリームに取り込み、
+  ミラーがそれを反映した時点で、GitHub はあなたを作者として PR をマージ済みにします。
+- **GitHub のリポジトリにブランチを push しないでください。** 書き込み権限があっても、次の同期で削除されます。
+  fork で作業してください。
 
 > [!NOTE]
 > 同じ内容がリポジトリの [`CONTRIBUTING.md`](https://github.com/tradalab/redishub/blob/main/CONTRIBUTING.md)
-> にもあります。プルリクエストを作成するときに GitHub が表示するのはそちらで、常に最新に保たれています。
+> にもあります。プルリクエストを作成するときに GitHub が表示するのはそちらです。
+
+タイポの修正や小さなバグ修正なら、先に Issue を立てる必要はありません。それより大きな変更（新機能、新しい
+依存関係、IPC コントラクトの変更）は、コードを書く前に [GitHub Issue](https://github.com/tradalab/redishub/issues)
+を作成して合意を得てください。
 
 ## コントリビューションのワークフロー
 
-1. **クローン**: `git clone https://github.com/tradalab/redishub.git`（ミラーは公開されており、常に最新です）。
+1. **Fork**: GitHub で `tradalab/redishub` を fork し、その fork をクローンします。
 2. **ブランチ作成**: `main` からフィーチャーブランチを作成します。
 3. **コーディング規約**:
     - **Go**: `gofmt` と標準的な Go のイディオムに従います。
     - **フロントエンド**: スタイリングには Tailwind CSS を、型付き props には TypeScript を使用します。
-    - **IPC**: `proto/app.proto` を編集して `make generate` を実行します。生成された `handler.go` / `types.go` / `shell/api/index.ts` を手作業で編集してはいけません。
+    - **IPC**: `idl/app.proto` を編集して `make generate` を実行します。生成された `internal/handler` / `internal/types` / `shell/api/index.ts` を手作業で編集してはいけません。[IPC コマンドの追加](/ja/docs/development/extending) を参照してください。
 4. **テスト**:
     - `make dev` を使用して、変更が開発モードで正しく動作することを確認します。
-    - 変更を提出する前に `make lint` と `make test` を実行します。
-5. **コミットメッセージ**: [Conventional Commits](https://www.conventionalcommits.org/) 形式に従い、内容が分かるコミットメッセージを使用します: `<type>(<scope>): <description>`。
+    - PR を作成する前に `make lint` と `make test` を実行します。CI は PR 上で `scorix build`、`scorix test`、
+      `scorix lint` を実行します。`make test` と `make lint` はそのローカル版です。
+5. **コミットメッセージ**: `<type>: <short description>` 形式の短い 1 行で、本文は付けません
+   (例: `fix: the graph survives a resize`)。
     - `feat:`: 新機能。
     - `fix:`: バグ修正。
     - `docs:`: ドキュメントの変更。
@@ -36,11 +43,10 @@ GitHub のリポジトリは**読み取り専用のミラー**です。開発は
 
 ## レビューのプロセス
 
-1. メンテナーがアップストリームで `main` ブランチをターゲットとするレビュー依頼を作成します。Issue 経由で
-   届いたコントリビューションも同じ流れで取り込まれます。
-2. 解決した問題や追加した機能について、明確な説明を記載します。
-3. 関連する Issue やディスカッションへのリンクを添えます。
-4. コードがレビューされ承認されるとメンテナーがマージし、数分以内に GitHub のミラーへ反映されます。
+1. ブランチを自分の fork に push し、`main` に対してプルリクエストを作成します。
+2. 解決した問題や追加した機能について明確な説明を記載し、関連する Issue へのリンクを添えます。
+3. PR 上で CI が実行され、レビューも PR 上で行われます。追加のコミットは通常どおりブランチに push します。
+4. 承認されるとメンテナーがアップストリームに取り込み、ミラーに反映されて PR はマージ済みと表示されます。
 
 ## コミュニケーション
 
