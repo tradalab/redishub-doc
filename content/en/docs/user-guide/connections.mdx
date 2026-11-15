@@ -50,6 +50,7 @@ Connect to Redis servers located within private VPCs or behind firewalls.
 - **Dynamic Routing**: RedisHub uses a dynamic SSH dialer that can reach any discovered node (Sentinel replicas, Cluster shards) through a single SSH tunnel.
 - **Authentication**: the profile's **Auth Type** is **Password**, **Keypair** (a PEM private key with an optional passphrase) or **SSH Agent**.
 - **Test Connection** in the SSH profile manager checks the tunnel on its own.
+- **Host Key Pinning**: the first time a profile reaches its SSH server, RedisHub shows the server's key fingerprint and asks **Trust this SSH host?** - from **Test Connection** in either form, or when the connection opens. Compare the fingerprint with the one your administrator gave you before pressing **Trust**; in the profile manager, press **Save** afterwards to keep it. If the server later shows a different key, RedisHub asks again under **SSH host key changed** with a red button, and nothing connects until you choose. Changing the profile's host or port drops the pinned key. Profiles saved before 1.19.0 have no pinned key and ask once.
 
 ![SSH Configuration](/assets/en/ssh-configuration.png)
 
